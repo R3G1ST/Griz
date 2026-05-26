@@ -115,7 +115,7 @@ export default function Home() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: "100%" }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-30 bg-black flex flex-col items-center justify-center gap-10"
+            className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center gap-10"
           >
             {[
               { label: "О нас", href: "#about" },
