@@ -1,0 +1,26 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "_OstvzjTISjz1P5m-SKVa"
+uri = "file://artifacts/grizli/src/assets/images/hero-bg.png"
+type = "image"
+title = "Hookah lounge hero background"
+
+[[generated]]
+id = "OafslnkxmozWM6gLtA5Sg"
+uri = "file://artifacts/grizli/src/assets/images/bear-skull.png"
+type = "image"
+title = "Bronze bear skull art"
+
+[[generated]]
+id = "WH7A_-kDLT4ti4veovzA4"
+uri = "file://artifacts/grizli/src/assets/images/cocktail.png"
+type = "image"
+title = "Dark cocktail and hookah"
+
+[[generated]]
+id = "0Ec1ffUDxmCukHH9QBvia"
+uri = "file://artifacts/grizli/src/assets/images/interior.png"
+type = "image"
+title = "Plush lounge interior"
