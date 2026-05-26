@@ -1,9 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { MapPin, Phone, Clock, ArrowRight } from "lucide-react";
+import { MapPin, Phone, Clock, CheckCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-// Assets (assuming they exist from previous generation)
 import heroBg from "@/assets/images/hero-bg.png";
 import bearSkull from "@/assets/images/bear-skull.png";
 import cocktail from "@/assets/images/cocktail.png";
@@ -22,15 +21,65 @@ const stagger = {
   visible: { transition: { staggerChildren: 0.15 } }
 };
 
+const BASE_URL = import.meta.env.BASE_URL ?? "/";
+
+type BookingForm = {
+  name: string;
+  phone: string;
+  date: string;
+  time: string;
+  guests: number;
+  comment: string;
+};
+
+type SubmitState = "idle" | "loading" | "success" | "error";
+
 export default function Home() {
   const { scrollY } = useScroll();
   const heroY = useTransform(scrollY, [0, 1000], [0, 300]);
   const heroOpacity = useTransform(scrollY, [0, 600], [1, 0]);
 
-  // Ensure top on mount
+  const [form, setForm] = useState<BookingForm>({
+    name: "",
+    phone: "",
+    date: "",
+    time: "",
+    guests: 2,
+    comment: "",
+  });
+  const [submitState, setSubmitState] = useState<SubmitState>("idle");
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: name === "guests" ? Number(value) : value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitState("loading");
+
+    try {
+      const apiBase = BASE_URL.endsWith("/") ? BASE_URL.slice(0, -1) : BASE_URL;
+      const res = await fetch(`${apiBase}/api/bookings`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      if (!res.ok) throw new Error("Server error");
+
+      setSubmitState("success");
+      setForm({ name: "", phone: "", date: "", time: "", guests: 2, comment: "" });
+    } catch {
+      setSubmitState("error");
+    }
+  };
+
+  const inputClass = "w-full bg-background border border-white/10 px-4 py-3 text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors font-light";
 
   return (
     <main className="min-h-[100dvh] w-full overflow-hidden bg-background text-foreground">
@@ -86,9 +135,11 @@ export default function Home() {
             transition={{ duration: 1, delay: 1 }}
             className="mt-12"
           >
-            <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground uppercase tracking-widest text-xs h-14 px-8 rounded-none border border-primary/50">
-              Забронировать стол
-            </Button>
+            <a href="#booking">
+              <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground uppercase tracking-widest text-xs h-14 px-8 rounded-none border border-primary/50">
+                Забронировать стол
+              </Button>
+            </a>
           </motion.div>
         </div>
       </section>
@@ -309,31 +360,98 @@ export default function Home() {
           
           <div className="bg-card p-8 border border-white/5 flex flex-col justify-center">
             <h3 className="text-2xl font-serif text-white mb-6">Забронировать</h3>
-            <div className="space-y-4">
-              <input 
-                type="text" 
-                placeholder="Имя" 
-                className="w-full bg-background border border-white/10 px-4 py-3 text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors font-light"
-              />
-              <input 
-                type="tel" 
-                placeholder="Телефон" 
-                className="w-full bg-background border border-white/10 px-4 py-3 text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors font-light"
-              />
-              <div className="grid grid-cols-2 gap-4">
+
+            {submitState === "success" ? (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col items-center justify-center gap-4 py-12 text-center"
+              >
+                <CheckCircle className="w-14 h-14 text-primary" />
+                <p className="text-white text-xl font-serif">Заявка принята!</p>
+                <p className="text-muted-foreground font-light">Мы свяжемся с вами для подтверждения.</p>
+                <button
+                  onClick={() => setSubmitState("idle")}
+                  className="text-primary text-sm underline underline-offset-4 mt-4 font-light"
+                >
+                  Отправить ещё одну заявку
+                </button>
+              </motion.div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <input 
-                  type="date" 
-                  className="w-full bg-background border border-white/10 px-4 py-3 text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors font-light [color-scheme:dark]"
+                  type="text"
+                  name="name"
+                  value={form.name}
+                  onChange={handleChange}
+                  placeholder="Имя" 
+                  required
+                  className={inputClass}
                 />
                 <input 
-                  type="time" 
-                  className="w-full bg-background border border-white/10 px-4 py-3 text-white placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors font-light [color-scheme:dark]"
+                  type="tel"
+                  name="phone"
+                  value={form.phone}
+                  onChange={handleChange}
+                  placeholder="Телефон"
+                  required
+                  className={inputClass}
                 />
-              </div>
-              <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground uppercase tracking-widest text-xs h-14 rounded-none mt-4">
-                Отправить заявку
-              </Button>
-            </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <input 
+                    type="date"
+                    name="date"
+                    value={form.date}
+                    onChange={handleChange}
+                    required
+                    className={`${inputClass} [color-scheme:dark]`}
+                  />
+                  <input 
+                    type="time"
+                    name="time"
+                    value={form.time}
+                    onChange={handleChange}
+                    required
+                    className={`${inputClass} [color-scheme:dark]`}
+                  />
+                </div>
+                <select
+                  name="guests"
+                  value={form.guests}
+                  onChange={handleChange}
+                  className={`${inputClass} cursor-pointer`}
+                >
+                  {[1,2,3,4,5,6,7,8].map(n => (
+                    <option key={n} value={n} className="bg-background">{n} {n === 1 ? "гость" : n < 5 ? "гостя" : "гостей"}</option>
+                  ))}
+                </select>
+                <textarea
+                  name="comment"
+                  value={form.comment}
+                  onChange={handleChange}
+                  placeholder="Пожелания (необязательно)"
+                  rows={2}
+                  className={`${inputClass} resize-none`}
+                />
+
+                {submitState === "error" && (
+                  <p className="text-red-400 text-sm font-light">Ошибка при отправке. Попробуйте ещё раз или позвоните нам.</p>
+                )}
+
+                <Button 
+                  type="submit"
+                  disabled={submitState === "loading"}
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground uppercase tracking-widest text-xs h-14 rounded-none mt-4"
+                >
+                  {submitState === "loading" ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Отправляем...
+                    </span>
+                  ) : "Отправить заявку"}
+                </Button>
+              </form>
+            )}
           </div>
         </div>
         
