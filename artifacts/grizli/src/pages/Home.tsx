@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
-import { MapPin, Phone, CheckCircle, Loader2 } from "lucide-react";
+import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
+import { MapPin, Phone, CheckCircle, Loader2, Menu as MenuIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
 
 import heroBg from "@/assets/images/hero-bg.png";
 import bearSkull from "@/assets/images/bear-skull.png";
@@ -39,6 +40,7 @@ export default function Home() {
   const { scrollY } = useScroll();
   const heroY = useTransform(scrollY, [0, 1000], [0, 300]);
   const heroOpacity = useTransform(scrollY, [0, 600], [1, 0]);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const [form, setForm] = useState<BookingForm>({
     name: "",
@@ -87,14 +89,58 @@ export default function Home() {
       <div className="bg-noise" />
 
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-40 px-6 py-3 flex justify-between items-center" style={{background: "linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%)"}}>
+      <nav className="fixed top-0 left-0 right-0 z-40 px-6 py-3 flex justify-between items-center" style={{background: "linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%)"}}>
         <img src={logo} alt="ГРИЗЛИ" className="h-14 w-14 object-contain rounded-full" />
-        <div className="hidden md:flex gap-8 text-sm font-medium tracking-widest uppercase text-white">
+        <div className="hidden md:flex gap-8 text-sm font-medium tracking-widest uppercase text-white items-center">
           <a href="#about" className="hover:text-primary transition-colors">О нас</a>
           <a href="#craft" className="hover:text-primary transition-colors">Мастерство</a>
+          <Link href="/menu" className="hover:text-primary transition-colors cursor-pointer">Меню</Link>
           <a href="#booking" className="hover:text-primary transition-colors">Бронь</a>
         </div>
+        {/* Mobile burger */}
+        <button
+          onClick={() => setMobileOpen(o => !o)}
+          className="md:hidden text-white p-2"
+          aria-label="Меню"
+        >
+          {mobileOpen ? <X className="w-6 h-6" /> : <MenuIcon className="w-6 h-6" />}
+        </button>
       </nav>
+
+      {/* Mobile menu overlay */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ opacity: 0, x: "100%" }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: "100%" }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-30 bg-black flex flex-col items-center justify-center gap-10"
+          >
+            {[
+              { label: "О нас", href: "#about" },
+              { label: "Мастерство", href: "#craft" },
+              { label: "Бронь", href: "#booking" },
+            ].map(link => (
+              <a
+                key={link.label}
+                href={link.href}
+                onClick={() => setMobileOpen(false)}
+                className="text-4xl font-serif text-white hover:text-primary transition-colors uppercase tracking-widest"
+              >
+                {link.label}
+              </a>
+            ))}
+            <Link
+              href="/menu"
+              onClick={() => setMobileOpen(false)}
+              className="text-4xl font-serif text-white hover:text-primary transition-colors uppercase tracking-widest cursor-pointer"
+            >
+              Меню
+            </Link>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Hero Section */}
       <section className="relative h-screen w-full flex items-center justify-center overflow-hidden">
@@ -296,6 +342,48 @@ export default function Home() {
               </h2>
             </div>
           </motion.div>
+        </div>
+      </section>
+
+      {/* Gallery */}
+      <section className="py-20 px-6 bg-black">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeIn}
+            className="flex items-center justify-between mb-10"
+          >
+            <h2 className="text-4xl md:text-6xl font-serif text-white uppercase">Атмосфера</h2>
+            <div className="w-16 h-px bg-primary" />
+          </motion.div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            {[
+              { src: heroBg, span: "md:col-span-2 md:row-span-2", label: "Зал" },
+              { src: bearSkull, span: "", label: "Символ" },
+              { src: cocktail, span: "", label: "Бар" },
+              { src: interior, span: "md:col-span-2", label: "Интерьер" },
+            ].map((img, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, scale: 0.97 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6, delay: i * 0.1 }}
+                className={`relative overflow-hidden group cursor-pointer ${img.span}`}
+              >
+                <div className="aspect-square overflow-hidden">
+                  <img
+                    src={img.src}
+                    alt={img.label}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 filter brightness-75 group-hover:brightness-90"
+                  />
+                </div>
+                <div className="absolute inset-0 border border-white/0 group-hover:border-primary/40 transition-colors duration-300" />
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
