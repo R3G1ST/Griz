@@ -36,6 +36,15 @@ type BookingForm = {
 
 type SubmitState = "idle" | "loading" | "success" | "error";
 
+type Review = { id: number; name: string; text: string; rating: number; createdAt: string };
+type ReviewForm = { name: string; text: string; rating: number };
+
+const TIME_SLOTS = [
+  "15:00","15:30","16:00","16:30","17:00","17:30","18:00","18:30",
+  "19:00","19:30","20:00","20:30","21:00","21:30","22:00","22:30",
+  "23:00","23:30","00:00","00:30","01:00","01:30","02:00","02:30","03:00",
+];
+
 export default function Home() {
   const { scrollY } = useScroll();
   const heroY = useTransform(scrollY, [0, 1000], [0, 300]);
@@ -43,18 +52,30 @@ export default function Home() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const [form, setForm] = useState<BookingForm>({
-    name: "",
-    phone: "",
-    date: "",
-    time: "",
-    guests: 2,
-    comment: "",
+    name: "", phone: "", date: "", time: "", guests: 2, comment: "",
   });
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
+  const [takenSlots, setTakenSlots] = useState<string[]>([]);
+
+  // Reviews
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewForm, setReviewForm] = useState<ReviewForm>({ name: "", text: "", rating: 5 });
+  const [reviewState, setReviewState] = useState<"idle" | "loading" | "success" | "error">("idle");
+  const [showReviewForm, setShowReviewForm] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    fetch(`${BASE_URL.endsWith("/") ? BASE_URL.slice(0,-1) : BASE_URL}/api/reviews`)
+      .then(r => r.json()).then(setReviews).catch(() => {});
   }, []);
+
+  // Fetch taken slots when date changes
+  useEffect(() => {
+    if (!form.date) { setTakenSlots([]); return; }
+    const apiBase = BASE_URL.endsWith("/") ? BASE_URL.slice(0, -1) : BASE_URL;
+    fetch(`${apiBase}/api/slots?date=${form.date}`)
+      .then(r => r.json()).then(d => setTakenSlots(d.taken ?? [])).catch(() => {});
+  }, [form.date]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -64,7 +85,6 @@ export default function Home() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitState("loading");
-
     try {
       const apiBase = BASE_URL.endsWith("/") ? BASE_URL.slice(0, -1) : BASE_URL;
       const res = await fetch(`${apiBase}/api/bookings`, {
@@ -72,13 +92,32 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-
       if (!res.ok) throw new Error("Server error");
-
       setSubmitState("success");
       setForm({ name: "", phone: "", date: "", time: "", guests: 2, comment: "" });
     } catch {
       setSubmitState("error");
+    }
+  };
+
+  const handleReviewSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setReviewState("loading");
+    try {
+      const apiBase = BASE_URL.endsWith("/") ? BASE_URL.slice(0, -1) : BASE_URL;
+      const res = await fetch(`${apiBase}/api/reviews`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(reviewForm),
+      });
+      if (!res.ok) throw new Error();
+      const created = await res.json();
+      setReviews(prev => [created, ...prev]);
+      setReviewState("success");
+      setReviewForm({ name: "", text: "", rating: 5 });
+      setShowReviewForm(false);
+    } catch {
+      setReviewState("error");
     }
   };
 
@@ -95,7 +134,9 @@ export default function Home() {
           <a href="#about" className="hover:text-primary transition-colors">О нас</a>
           <a href="#craft" className="hover:text-primary transition-colors">Мастерство</a>
           <Link href="/menu" className="hover:text-primary transition-colors cursor-pointer">Меню</Link>
+          <Link href="/gallery" className="hover:text-primary transition-colors cursor-pointer">Галерея</Link>
           <a href="#booking" className="hover:text-primary transition-colors">Бронь</a>
+          <Link href="/card" className="hover:text-primary transition-colors cursor-pointer">Контакты</Link>
         </div>
         {/* Mobile burger */}
         <button
@@ -131,12 +172,17 @@ export default function Home() {
                 {link.label}
               </a>
             ))}
-            <Link
-              href="/menu"
-              onClick={() => setMobileOpen(false)}
-              className="text-4xl font-serif text-white hover:text-primary transition-colors uppercase tracking-widest cursor-pointer"
-            >
+            <Link href="/menu" onClick={() => setMobileOpen(false)}
+              className="text-4xl font-serif text-white hover:text-primary transition-colors uppercase tracking-widest cursor-pointer">
               Меню
+            </Link>
+            <Link href="/gallery" onClick={() => setMobileOpen(false)}
+              className="text-4xl font-serif text-white hover:text-primary transition-colors uppercase tracking-widest cursor-pointer">
+              Галерея
+            </Link>
+            <Link href="/card" onClick={() => setMobileOpen(false)}
+              className="text-4xl font-serif text-white hover:text-primary transition-colors uppercase tracking-widest cursor-pointer">
+              Контакты
             </Link>
           </motion.div>
         )}
@@ -422,6 +468,70 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Reviews */}
+      <section className="py-24 px-6 bg-black border-t border-white/5">
+        <div className="max-w-7xl mx-auto">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeIn}
+            className="flex items-center justify-between mb-12 flex-wrap gap-4">
+            <h2 className="text-4xl md:text-6xl font-serif text-white uppercase">Отзывы</h2>
+            <button onClick={() => setShowReviewForm(o => !o)}
+              className="text-xs uppercase tracking-widest border border-primary/40 text-primary px-4 py-2 hover:bg-primary/10 transition-colors">
+              {showReviewForm ? "Отмена" : "+ Оставить отзыв"}
+            </button>
+          </motion.div>
+
+          <AnimatePresence>
+            {showReviewForm && (
+              <motion.form initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }} onSubmit={handleReviewSubmit}
+                className="mb-10 border border-white/10 p-6 space-y-4 overflow-hidden">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <input value={reviewForm.name} onChange={e => setReviewForm(p => ({ ...p, name: e.target.value }))}
+                    placeholder="Ваше имя" required maxLength={100}
+                    className={inputClass} />
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-500 text-sm">Оценка:</span>
+                    {[1,2,3,4,5].map(s => (
+                      <button key={s} type="button" onClick={() => setReviewForm(p => ({ ...p, rating: s }))}
+                        className={`text-2xl transition-transform hover:scale-110 ${s <= reviewForm.rating ? "text-primary" : "text-gray-700"}`}>
+                        ★
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <textarea value={reviewForm.text} onChange={e => setReviewForm(p => ({ ...p, text: e.target.value }))}
+                  placeholder="Ваш отзыв..." required minLength={5} maxLength={1000} rows={3}
+                  className={`${inputClass} resize-none`} />
+                {reviewState === "error" && <p className="text-red-400 text-sm">Ошибка. Попробуйте ещё раз.</p>}
+                <Button type="submit" disabled={reviewState === "loading"}
+                  className="bg-primary text-black uppercase tracking-widest text-xs h-11 rounded-none px-8">
+                  {reviewState === "loading" ? "Отправляем..." : "Опубликовать"}
+                </Button>
+              </motion.form>
+            )}
+          </AnimatePresence>
+
+          {reviews.length === 0 ? (
+            <p className="text-gray-600 text-center py-12">Пока отзывов нет — будьте первым!</p>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {reviews.map((r, i) => (
+                <motion.div key={r.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }} transition={{ delay: i * 0.05 }}
+                  className="border border-white/5 p-6 hover:border-white/10 transition-colors">
+                  <div className="flex justify-between items-start mb-3">
+                    <span className="text-white font-medium">{r.name}</span>
+                    <span className="text-primary text-sm tracking-wide">{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</span>
+                  </div>
+                  <p className="text-gray-400 font-light text-sm leading-relaxed">{r.text}</p>
+                  <p className="text-gray-700 text-xs mt-3">{new Date(r.createdAt).toLocaleDateString("ru-RU")}</p>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* Footer / Booking */}
       <section id="booking" className="py-32 px-6 relative bg-background border-t border-white/5">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16">
@@ -528,15 +638,29 @@ export default function Home() {
                     required
                     className={`${inputClass} [color-scheme:dark]`}
                   />
-                  <input 
-                    type="time"
+                  <select
                     name="time"
                     value={form.time}
                     onChange={handleChange}
                     required
-                    className={`${inputClass} [color-scheme:dark]`}
-                  />
+                    className={`${inputClass} cursor-pointer`}
+                  >
+                    <option value="" disabled className="bg-background">Время</option>
+                    {TIME_SLOTS.map(slot => {
+                      const taken = takenSlots.includes(slot);
+                      return (
+                        <option key={slot} value={slot} disabled={taken} className="bg-background">
+                          {slot}{taken ? " — занято" : ""}
+                        </option>
+                      );
+                    })}
+                  </select>
                 </div>
+                {takenSlots.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    🕐 На эту дату {takenSlots.length} слот{takenSlots.length === 1 ? "" : "а"} занято
+                  </p>
+                )}
                 <select
                   name="guests"
                   value={form.guests}
