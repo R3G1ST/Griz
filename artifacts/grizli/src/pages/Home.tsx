@@ -7,6 +7,7 @@ import heroBg from "@/assets/images/hero-bg.png";
 import bearSkull from "@/assets/images/bear-skull.png";
 import cocktail from "@/assets/images/cocktail.png";
 import interior from "@/assets/images/interior.png";
+import logo from "@/assets/images/logo.jpeg";
 
 const fadeIn = {
   hidden: { opacity: 0, y: 30 },
@@ -86,9 +87,9 @@ export default function Home() {
       <div className="bg-noise" />
 
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-40 px-6 py-6 mix-blend-difference flex justify-between items-center text-white">
-        <div className="text-2xl font-serif font-bold tracking-[0.2em]">ГРИЗЛИ</div>
-        <div className="hidden md:flex gap-8 text-sm font-medium tracking-widest uppercase">
+      <nav className="fixed top-0 left-0 right-0 z-40 px-6 py-3 flex justify-between items-center" style={{background: "linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%)"}}>
+        <img src={logo} alt="ГРИЗЛИ" className="h-14 w-14 object-contain rounded-full" />
+        <div className="hidden md:flex gap-8 text-sm font-medium tracking-widest uppercase text-white">
           <a href="#about" className="hover:text-primary transition-colors">О нас</a>
           <a href="#craft" className="hover:text-primary transition-colors">Мастерство</a>
           <a href="#booking" className="hover:text-primary transition-colors">Бронь</a>
@@ -344,17 +345,29 @@ export default function Home() {
             
             <div className="space-y-6">
               <div className="flex items-center gap-4 text-white/80">
-                <MapPin className="w-5 h-5 text-primary" />
-                <span className="font-light">ул. Лесная, 42, цокольный этаж</span>
+                <MapPin className="w-5 h-5 text-primary flex-shrink-0" />
+                <span className="font-light">г. Тюмень, ул. Новосёлов, 92</span>
               </div>
               <div className="flex items-center gap-4 text-white/80">
-                <Clock className="w-5 h-5 text-primary" />
+                <Clock className="w-5 h-5 text-primary flex-shrink-0" />
                 <span className="font-light">Ежедневно: 16:00 - 04:00</span>
               </div>
               <div className="flex items-center gap-4 text-white/80">
-                <Phone className="w-5 h-5 text-primary" />
+                <Phone className="w-5 h-5 text-primary flex-shrink-0" />
                 <span className="font-light">+7 (999) 123-45-67</span>
               </div>
+            </div>
+
+            {/* Yandex Map */}
+            <div className="mt-8 border border-white/10 overflow-hidden">
+              <iframe
+                src="https://yandex.ru/map-widget/v1/?text=Тюмень%2C%20улица%20Новосёлов%2C%2092&z=16&l=map"
+                title="ГРИЗЛИ на карте"
+                width="100%"
+                height="240"
+                style={{ border: 0, display: "block" }}
+                allowFullScreen
+              />
             </div>
           </div>
           
