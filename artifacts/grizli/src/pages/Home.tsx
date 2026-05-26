@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { MapPin, Phone, Clock, CheckCircle, Loader2 } from "lucide-react";
+import { MapPin, Phone, CheckCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import heroBg from "@/assets/images/hero-bg.png";
@@ -343,31 +343,52 @@ export default function Home() {
               Количество мест ограничено. Рекомендуем бронировать стол заранее, особенно в выходные дни.
             </p>
             
-            <div className="space-y-6">
-              <div className="flex items-center gap-4 text-white/80">
-                <MapPin className="w-5 h-5 text-primary flex-shrink-0" />
+            <div className="space-y-4">
+              <div className="flex items-start gap-4 text-white/80">
+                <MapPin className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
                 <span className="font-light">г. Тюмень, ул. Новосёлов, 92</span>
               </div>
-              <div className="flex items-center gap-4 text-white/80">
-                <Clock className="w-5 h-5 text-primary flex-shrink-0" />
-                <span className="font-light">Ежедневно: 16:00 - 04:00</span>
-              </div>
-              <div className="flex items-center gap-4 text-white/80">
-                <Phone className="w-5 h-5 text-primary flex-shrink-0" />
-                <span className="font-light">+7 (999) 123-45-67</span>
+              <div className="flex items-start gap-4 text-white/80">
+                <Phone className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                <span className="font-light">+7 (916) 328-38-91</span>
               </div>
             </div>
 
-            {/* Yandex Map */}
-            <div className="mt-8 border border-white/10 overflow-hidden">
+            {/* Schedule */}
+            <div className="mt-6 border border-white/10 p-5">
+              <p className="text-primary font-serif text-lg tracking-widest mb-4 uppercase">График работы</p>
+              <div className="space-y-2 text-sm font-light">
+                {[
+                  { days: "Пн — Чт", hours: "15:00 — 02:00" },
+                  { days: "Пт — Сб", hours: "15:00 — 04:00" },
+                  { days: "Вс", hours: "15:00 — 02:00" },
+                ].map(({ days, hours }) => (
+                  <div key={days} className="flex justify-between text-white/70">
+                    <span>{days}</span>
+                    <span className="text-white">{hours}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* OpenStreetMap */}
+            <div className="mt-6 border border-white/10 overflow-hidden">
               <iframe
-                src="https://yandex.ru/map-widget/v1/?text=Тюмень%2C%20улица%20Новосёлов%2C%2092&z=16&l=map"
+                src="https://www.openstreetmap.org/export/embed.html?bbox=65.5865%2C57.1080%2C65.6165%2C57.1180&layer=mapnik&marker=57.1130%2C65.6015"
                 title="ГРИЗЛИ на карте"
                 width="100%"
-                height="240"
+                height="220"
                 style={{ border: 0, display: "block" }}
-                allowFullScreen
+                loading="lazy"
               />
+              <a
+                href="https://2gis.ru/tyumen/search/%D1%83%D0%BB%20%D0%9D%D0%BE%D0%B2%D0%BE%D1%81%D1%91%D0%BB%D0%BE%D0%B2%2092"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 py-2 bg-white/5 text-primary text-xs tracking-widest uppercase hover:bg-white/10 transition-colors"
+              >
+                Открыть в 2ГИС
+              </a>
             </div>
           </div>
           
