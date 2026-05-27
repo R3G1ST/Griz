@@ -1,4 +1,4 @@
-import { db, loyaltyCardsTable, loyaltyVisitsTable } from "@workspace/db";
+import { db, loyaltyCardsTable, loyaltyVisitsTable, reviewsTable } from "@workspace/db";
 import { eq, sql, desc } from "drizzle-orm";
 import type { LoyaltyCard } from "@workspace/db";
 
@@ -28,6 +28,15 @@ export function calcBonus(amountSpent: number, tier: Tier): number {
 function progressBar(current: number, max: number, len = 10): string {
   const filled = Math.round((current / max) * len);
   return "█".repeat(filled) + "░".repeat(len - filled);
+}
+
+// Escape user-provided text before inserting into Telegram HTML messages
+function esc(s: string | null | undefined): string {
+  if (!s) return "";
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 // ── Telegram API helper ───────────────────────────────────────────────────────
@@ -72,9 +81,9 @@ async function notifyStaff(guestName: string, tableNum: string, staffType: strin
   const text =
     `🔔 <b>ВЫЗОВ ПЕРСОНАЛА</b>\n\n` +
     `${staffEmoji} <b>${staffName}</b>\n` +
-    `🪑 Стол: <b>№${tableNum}</b>\n` +
-    `📋 Запрос: <b>${request}</b>\n` +
-    `👤 Гость: ${guestName}`;
+    `🪑 Стол: <b>№${esc(tableNum)}</b>\n` +
+    `📋 Запрос: <b>${esc(request)}</b>\n` +
+    `👤 Гость: ${esc(guestName)}`;
 
   await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
     method: "POST", headers: { "Content-Type": "application/json" },
@@ -102,8 +111,8 @@ function renderCard(card: LoyaltyCard): { text: string; markup: object } {
     `║   🐻 <b>ГРИЗЛИ Hookah Lounge</b>   ║\n` +
     `║     КАРТА ЛОЯЛЬНОСТИ      ║\n` +
     `╠═══════════════════════════╣\n` +
-    `║ 👤 <b>${card.name || "Гость"}</b>\n` +
-    `║ 📞 ${phone}\n` +
+    `║ 👤 <b>${esc(card.name || "Гость")}</b>\n` +
+    `║ 📞 ${esc(phone)}\n` +
     `╠═══════════════════════════╣\n` +
     `║ ${tier.emoji} <b>${tier.name} гость</b>\n` +
     `║\n` +
@@ -127,6 +136,9 @@ function renderCard(card: LoyaltyCard): { text: string; markup: object } {
       ],
       [
         { text: "🔔 Позвать персонал", callback_data: "call_staff" },
+      ],
+      [
+        { text: "⭐ Оставить отзыв",   callback_data: "review_start" },
       ],
       [
         { text: "🔄 Обновить",   callback_data: "card" },
@@ -206,7 +218,9 @@ async function updateTier(card: LoyaltyCard): Promise<LoyaltyCard> {
 type SessionState =
   | { state: "awaiting_phone" }
   | { state: "awaiting_phone_change" }
-  | { state: "awaiting_table"; staffType: string; request: string };
+  | { state: "awaiting_table"; staffType: string; request: string }
+  | { state: "awaiting_review_rating" }
+  | { state: "awaiting_review_text"; rating: number };
 
 const sessions: Map<number, SessionState> = new Map();
 
@@ -222,7 +236,7 @@ async function handleStart(chatId: number, userId: number, firstName: string, ar
   const card = await findCard(userId);
   if (card) {
     const { text, markup } = renderCard(card);
-    await send(chatId, `👋 С возвращением, <b>${card.name || firstName}</b>!\n\nВаша карта лояльности:\n\n${text}`,
+    await send(chatId, `👋 С возвращением, <b>${esc(card.name || firstName)}</b>!\n\nВаша карта лояльности:\n\n${text}`,
       { reply_markup: markup });
   } else {
     sessions.set(userId, { state: "awaiting_phone" });
@@ -363,6 +377,81 @@ async function handleTableNumber(chatId: number, userId: number, tableNum: strin
     `📋 Запрос: ${session.request}\n\n` +
     `<i>Ожидайте, пожалуйста.</i>`,
     { reply_markup: { inline_keyboard: [[{ text: "🔔 Ещё вызов", callback_data: "call_staff" }, { text: "🎴 Моя карта", callback_data: "card" }]] } }
+  );
+}
+
+// ── Review flow ───────────────────────────────────────────────────────────────
+async function handleReviewStart(chatId: number, userId: number, messageId?: number) {
+  sessions.set(userId, { state: "awaiting_review_rating" });
+  const text =
+    `⭐ <b>Оставить отзыв</b>\n\n` +
+    `Спасибо, что хотите поделиться впечатлениями! Ваш отзыв появится на сайте.\n\n` +
+    `Поставьте оценку:`;
+  const markup = {
+    inline_keyboard: [
+      [
+        { text: "⭐",        callback_data: "rate:1" },
+        { text: "⭐⭐",       callback_data: "rate:2" },
+        { text: "⭐⭐⭐",      callback_data: "rate:3" },
+      ],
+      [
+        { text: "⭐⭐⭐⭐",      callback_data: "rate:4" },
+        { text: "⭐⭐⭐⭐⭐",     callback_data: "rate:5" },
+      ],
+      [{ text: "← Отмена", callback_data: "card" }],
+    ],
+  };
+  if (messageId) await editMessage(chatId, messageId, text, { reply_markup: markup });
+  else await send(chatId, text, { reply_markup: markup });
+}
+
+async function handleReviewRating(chatId: number, userId: number, rating: number, messageId?: number) {
+  sessions.set(userId, { state: "awaiting_review_text", rating });
+  const stars = "⭐".repeat(rating);
+  const text =
+    `${stars}\n\n` +
+    `Отлично! Теперь напишите ваш отзыв одним сообщением (от 5 до 1000 символов):`;
+  if (messageId) await editMessage(chatId, messageId, text, { reply_markup: { inline_keyboard: [[{ text: "← Отмена", callback_data: "card" }]] } });
+  else await send(chatId, text);
+}
+
+async function handleReviewText(chatId: number, userId: number, text: string, rating: number) {
+  sessions.delete(userId);
+  if (text.length < 5 || text.length > 1000) {
+    await send(chatId, "⚠️ Отзыв должен быть от 5 до 1000 символов. Попробуйте ещё раз — /start → ⭐ Оставить отзыв.");
+    return;
+  }
+  const card = await findCard(userId);
+  const name = card?.name ?? "Гость";
+
+  try {
+    await db.insert(reviewsTable).values({ name, text, rating, source: "telegram" });
+  } catch {
+    await send(chatId, "❌ Не удалось сохранить отзыв. Попробуйте позже.");
+    return;
+  }
+
+  // Notify admin
+  const adminChatId = process.env.TELEGRAM_CHAT_ID;
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  if (adminChatId && botToken) {
+    const stars = "⭐".repeat(rating);
+    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: adminChatId,
+        text: `🆕 <b>Новый отзыв (Telegram)</b>\n\n${stars}\n👤 ${esc(name)}\n\n«${esc(text)}»`,
+        parse_mode: "HTML",
+      }),
+    }).catch(() => {});
+  }
+
+  await send(chatId,
+    `✅ <b>Спасибо за отзыв!</b>\n\n` +
+    `${"⭐".repeat(rating)}\n` +
+    `«${esc(text)}»\n\n` +
+    `Ваш отзыв уже опубликован на сайте.`,
+    { reply_markup: { inline_keyboard: [[{ text: "🎴 Моя карта", callback_data: "card" }]] } }
   );
 }
 
@@ -509,6 +598,7 @@ async function handleHelp(chatId: number, userId: number) {
     `/balance — баланс баллов\n` +
     `/history — история визитов\n` +
     `/call — позвать персонал\n` +
+    `/review — оставить отзыв\n` +
     `/help — помощь` +
     adminPart
   );
@@ -525,12 +615,17 @@ export async function handleLoyaltyUpdate(update: any) {
       const chatId = cq.message?.chat?.id ?? userId;
       const msgId  = cq.message?.message_id;
 
-      if (cq.data === "card")        return handleCard(chatId, userId);
-      if (cq.data === "balance")     return handleBalance(chatId, userId);
-      if (cq.data === "history")     return handleHistory(chatId, userId);
-      if (cq.data === "call_staff")  return handleCallStaff(chatId, userId, msgId);
-      if (cq.data === "call_hookah") return handleCallHookah(chatId, msgId);
-      if (cq.data === "call_waiter") return handleCallWaiter(chatId, msgId);
+      if (cq.data === "card")         return handleCard(chatId, userId);
+      if (cq.data === "balance")      return handleBalance(chatId, userId);
+      if (cq.data === "history")      return handleHistory(chatId, userId);
+      if (cq.data === "call_staff")   return handleCallStaff(chatId, userId, msgId);
+      if (cq.data === "call_hookah")  return handleCallHookah(chatId, msgId);
+      if (cq.data === "call_waiter")  return handleCallWaiter(chatId, msgId);
+      if (cq.data === "review_start") return handleReviewStart(chatId, userId, msgId);
+      if (cq.data.startsWith("rate:")) {
+        const r = parseInt(cq.data.slice(5));
+        if (r >= 1 && r <= 5) return handleReviewRating(chatId, userId, r, msgId);
+      }
 
       // Staff request: "req:hookah:Сменить уголь" or "req:waiter:Принести счёт"
       if (cq.data.startsWith("req:")) {
@@ -564,6 +659,11 @@ export async function handleLoyaltyUpdate(update: any) {
     // Check session state
     const session = sessions.get(userId);
 
+    if (session?.state === "awaiting_review_text") {
+      await handleReviewText(chatId, userId, text.trim(), session.rating);
+      return;
+    }
+
     if (session?.state === "awaiting_table") {
       const tableNum = text.trim();
       if (/^\d{1,3}$/.test(tableNum)) {
@@ -591,6 +691,7 @@ export async function handleLoyaltyUpdate(update: any) {
       case "/balance":       return handleBalance(chatId, userId);
       case "/history":       return handleHistory(chatId, userId);
       case "/call":          return handleCallStaff(chatId, userId);
+      case "/review":        return handleReviewStart(chatId, userId);
       case "/help":          return handleHelp(chatId, userId);
       case "/addvisit":      return handleAddVisit(chatId, userId, args);
       case "/newguest":      return handleNewGuest(chatId, userId, args);
@@ -617,6 +718,7 @@ export async function registerLoyaltyWebhook(baseUrl: string) {
     { command: "balance", description: "Баланс баллов" },
     { command: "history", description: "История визитов" },
     { command: "call",    description: "Позвать персонал" },
+    { command: "review",  description: "Оставить отзыв" },
     { command: "help",    description: "Помощь" },
   ]});
 }

@@ -8,6 +8,8 @@ const NAV_LINKS = [
   { label: "Главная",       href: "/" },
   { label: "Меню",          href: "/menu" },
   { label: "Галерея",       href: "/gallery" },
+  { label: "Отзывы",        href: "/reviews" },
+  { label: "Лояльность",    href: "/loyalty" },
   { label: "Бронирование",  href: "/booking" },
   { label: "Контакты",      href: "/card" },
 ];
@@ -22,7 +24,7 @@ export default function Navbar() {
         <Link href="/">
           <img src={logo} alt="ГРИЗЛИ" className="h-12 w-12 object-contain rounded-full cursor-pointer" />
         </Link>
-        <div className="hidden md:flex gap-8 text-sm font-medium tracking-widest uppercase text-white items-center">
+        <div className="hidden lg:flex gap-7 text-[11px] xl:text-xs font-medium tracking-[0.2em] uppercase text-white items-center">
           {NAV_LINKS.map(link => (
             <Link
               key={link.href}
@@ -35,7 +37,7 @@ export default function Navbar() {
         </div>
         <button
           onClick={() => setMobileOpen(o => !o)}
-          className="md:hidden text-white p-2"
+          className="lg:hidden text-white p-2"
           aria-label="Меню"
         >
           {mobileOpen ? <X className="w-6 h-6" /> : <MenuIcon className="w-6 h-6" />}

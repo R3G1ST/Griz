@@ -9,6 +9,13 @@ import { QRCodeSVG } from "qrcode.react";
 const API_BASE = "/api";
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD ?? "grizli2024";
 
+// Authenticated fetch wrapper — adds admin password header to every request
+const adminFetch = (url: string, init: RequestInit = {}) => {
+  const headers = new Headers(init.headers);
+  headers.set("x-admin-password", sessionStorage.getItem("grizli_admin_pw") ?? "");
+  return fetch(url, { ...init, headers });
+};
+
 type Booking = {
   id: number; name: string; phone: string; date: string; time: string;
   guests: number; comment: string | null; status: "pending" | "confirmed" | "cancelled";
@@ -36,7 +43,10 @@ function Login({ onLogin }: { onLogin: () => void }) {
   const [pw, setPw] = useState(""); const [err, setErr] = useState(false);
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (pw === ADMIN_PASSWORD) { onLogin(); } else { setErr(true); setPw(""); }
+    if (pw === ADMIN_PASSWORD) {
+      sessionStorage.setItem("grizli_admin_pw", pw);
+      onLogin();
+    } else { setErr(true); setPw(""); }
   };
   return (
     <div className="min-h-screen bg-black flex items-center justify-center px-4">
@@ -73,7 +83,7 @@ function BookingsTab() {
   useEffect(() => { load(); }, [load]);
 
   const update = async (id: number, status: string) => {
-    await fetch(`${API_BASE}/bookings/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
+    await adminFetch(`${API_BASE}/bookings/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
     setBookings(prev => prev.map(b => b.id === id ? { ...b, status: status as Booking["status"] } : b));
   };
 
@@ -320,13 +330,381 @@ function TablesTab() {
   );
 }
 
+// ── Settings tab ──────────────────────────────────────────────────────────────
+function SettingsTab() {
+  const [data, setData] = useState<any>({});
+  const [saved, setSaved] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/settings`).then(r => r.json()).then(d => { setData(d || {}); setLoading(false); });
+  }, []);
+
+  const update = (key: string, value: any) => setData((prev: any) => ({ ...prev, [key]: value }));
+
+  const save = async (key: string) => {
+    await adminFetch(`${API_BASE}/settings/${key}`, {
+      method: "PUT", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ value: data[key] }),
+    });
+    setSaved(key); setTimeout(() => setSaved(null), 1500);
+  };
+
+  if (loading) return <div className="text-gray-500 text-center py-20">Загрузка...</div>;
+
+  const contacts = data.contacts || {};
+  const hero = data.hero || {};
+  const about = data.about || {};
+  const schedule = data.schedule || [];
+  const rules = data.rules || [];
+
+  const fieldClass = "w-full bg-neutral-900 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:border-lime";
+  const labelClass = "block text-xs text-gray-500 uppercase tracking-widest mb-1";
+  const sectionClass = "border border-white/5 p-5 mb-6";
+  const saveBtn = (key: string) => (
+    <button onClick={() => save(key)} className="px-4 py-2 bg-lime text-black text-xs uppercase tracking-widest font-bold hover:bg-lime/80 transition-colors">
+      {saved === key ? "✓ Сохранено" : "Сохранить"}
+    </button>
+  );
+
+  return (
+    <div className="max-w-3xl">
+      {/* Contacts */}
+      <div className={sectionClass}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-white font-bold uppercase tracking-widest text-sm">Контакты</h3>
+          {saveBtn("contacts")}
+        </div>
+        <div className="grid md:grid-cols-2 gap-3">
+          {[
+            ["phone","Телефон"],["address","Адрес"],
+            ["telegram","Telegram URL"],["instagram","Instagram URL"],
+            ["vk","VK URL"],["mapUrl","2GIS / Карта URL"],
+          ].map(([key, label]) => (
+            <div key={key}>
+              <label className={labelClass}>{label}</label>
+              <input value={contacts[key] || ""} onChange={e => update("contacts", { ...contacts, [key]: e.target.value })}
+                className={fieldClass} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Hero */}
+      <div className={sectionClass}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-white font-bold uppercase tracking-widest text-sm">Главный экран</h3>
+          {saveBtn("hero")}
+        </div>
+        <div className="grid md:grid-cols-2 gap-3 mb-3">
+          <div>
+            <label className={labelClass}>Заголовок (большой)</label>
+            <input value={hero.title1 || ""} onChange={e => update("hero", { ...hero, title1: e.target.value })} className={fieldClass} />
+          </div>
+          <div>
+            <label className={labelClass}>Заголовок (курсив)</label>
+            <input value={hero.title2 || ""} onChange={e => update("hero", { ...hero, title2: e.target.value })} className={fieldClass} />
+          </div>
+        </div>
+        <label className={labelClass}>Подзаголовок</label>
+        <textarea value={hero.subtitle || ""} onChange={e => update("hero", { ...hero, subtitle: e.target.value })} rows={2} className={`${fieldClass} resize-none`} />
+      </div>
+
+      {/* About */}
+      <div className={sectionClass}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-white font-bold uppercase tracking-widest text-sm">О нас</h3>
+          {saveBtn("about")}
+        </div>
+        <label className={labelClass}>Заголовок (используйте точки для разбивки)</label>
+        <input value={about.title || ""} onChange={e => update("about", { ...about, title: e.target.value })} className={`${fieldClass} mb-3`} />
+        <label className={labelClass}>Параграф 1</label>
+        <textarea value={about.p1 || ""} onChange={e => update("about", { ...about, p1: e.target.value })} rows={3} className={`${fieldClass} resize-none mb-3`} />
+        <label className={labelClass}>Параграф 2</label>
+        <textarea value={about.p2 || ""} onChange={e => update("about", { ...about, p2: e.target.value })} rows={3} className={`${fieldClass} resize-none`} />
+      </div>
+
+      {/* Schedule */}
+      <div className={sectionClass}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-white font-bold uppercase tracking-widest text-sm">График работы</h3>
+          {saveBtn("schedule")}
+        </div>
+        {(schedule as Array<{ days: string; hours: string }>).map((row, i) => (
+          <div key={i} className="grid grid-cols-[1fr_1fr_auto] gap-2 mb-2">
+            <input value={row.days} onChange={e => {
+              const next = [...schedule]; next[i] = { ...row, days: e.target.value }; update("schedule", next);
+            }} placeholder="Пн — Чт" className={fieldClass} />
+            <input value={row.hours} onChange={e => {
+              const next = [...schedule]; next[i] = { ...row, hours: e.target.value }; update("schedule", next);
+            }} placeholder="15:00 — 02:00" className={fieldClass} />
+            <button onClick={() => update("schedule", schedule.filter((_: any, j: number) => j !== i))}
+              className="px-3 text-red-400 border border-red-500/30 hover:bg-red-500/10 text-xs">✕</button>
+          </div>
+        ))}
+        <button onClick={() => update("schedule", [...schedule, { days: "", hours: "" }])}
+          className="text-xs text-lime border border-lime/30 px-3 py-2 hover:bg-lime/10 uppercase tracking-widest">+ Строка</button>
+      </div>
+
+      {/* Rules */}
+      <div className={sectionClass}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-white font-bold uppercase tracking-widest text-sm">Правила</h3>
+          {saveBtn("rules")}
+        </div>
+        {(rules as Array<{ title: string; text: string }>).map((row, i) => (
+          <div key={i} className="border border-white/5 p-3 mb-2">
+            <div className="flex gap-2 mb-2">
+              <input value={row.title} onChange={e => {
+                const next = [...rules]; next[i] = { ...row, title: e.target.value }; update("rules", next);
+              }} placeholder="Заголовок" className={fieldClass} />
+              <button onClick={() => update("rules", rules.filter((_: any, j: number) => j !== i))}
+                className="px-3 text-red-400 border border-red-500/30 hover:bg-red-500/10 text-xs">✕</button>
+            </div>
+            <textarea value={row.text} onChange={e => {
+              const next = [...rules]; next[i] = { ...row, text: e.target.value }; update("rules", next);
+            }} rows={2} placeholder="Текст правила" className={`${fieldClass} resize-none`} />
+          </div>
+        ))}
+        <button onClick={() => update("rules", [...rules, { title: "", text: "" }])}
+          className="text-xs text-lime border border-lime/30 px-3 py-2 hover:bg-lime/10 uppercase tracking-widest">+ Правило</button>
+      </div>
+    </div>
+  );
+}
+
+// ── Menu CMS tab ──────────────────────────────────────────────────────────────
+type MenuItem = { id: number; section: string; category: string; name: string; description: string; price: string; sortOrder: number; isActive: number };
+
+function MenuCmsTab() {
+  const [items, setItems] = useState<MenuItem[]>([]);
+  const [edit, setEdit] = useState<MenuItem | null>(null);
+  const [adding, setAdding] = useState(false);
+
+  // Clone before editing so we never mutate the list-state object in place
+  const startEdit = (it: MenuItem) => { setAdding(false); setEdit({ ...it }); };
+
+  const load = () => fetch(`${API_BASE}/menu`).then(r => r.json()).then(setItems);
+  useEffect(() => { load(); }, []);
+
+  const save = async (item: Partial<MenuItem>) => {
+    if (item.id) {
+      await adminFetch(`${API_BASE}/menu/${item.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(item) });
+    } else {
+      await adminFetch(`${API_BASE}/menu`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(item) });
+    }
+    setEdit(null); setAdding(false); load();
+  };
+
+  const del = async (id: number) => {
+    if (!confirm("Удалить позицию?")) return;
+    await adminFetch(`${API_BASE}/menu/${id}`, { method: "DELETE" });
+    load();
+  };
+
+  const grouped = items.reduce<Record<string, MenuItem[]>>((acc, it) => {
+    const k = `${it.section} / ${it.category}`;
+    (acc[k] ||= []).push(it); return acc;
+  }, {});
+
+  const editing = edit || (adding ? { id: 0, section: "Кальяны", category: "", name: "", description: "", price: "", sortOrder: 0, isActive: 1 } as MenuItem : null);
+  const fieldClass = "w-full bg-neutral-900 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:border-lime";
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
+        <h2 className="text-white font-bold uppercase tracking-widest text-sm">Меню — {items.length} позиц.</h2>
+        <button onClick={() => { setAdding(true); setEdit(null); }} className="px-4 py-2 bg-lime text-black text-xs uppercase tracking-widest font-bold hover:bg-lime/80">+ Добавить</button>
+      </div>
+
+      {Object.entries(grouped).map(([groupKey, list]) => (
+        <div key={groupKey} className="mb-8">
+          <h3 className="text-lime text-xs uppercase tracking-widest mb-3">{groupKey}</h3>
+          <div className="space-y-1">
+            {list.map(it => (
+              <div key={it.id} className={`border border-white/5 p-3 flex items-center justify-between gap-3 hover:border-white/15 ${!it.isActive && "opacity-40"}`}>
+                <div className="flex-1 min-w-0">
+                  <div className="text-white text-sm font-medium">{it.name}</div>
+                  <div className="text-gray-500 text-xs truncate">{it.description}</div>
+                </div>
+                <span className="text-lime text-sm whitespace-nowrap">{it.price}</span>
+                <button onClick={() => startEdit(it)} className="text-xs text-gray-400 hover:text-lime border border-white/10 px-2 py-1">Ред.</button>
+                <button onClick={() => del(it.id)} className="text-xs text-red-400 hover:bg-red-500/10 border border-red-500/30 px-2 py-1">✕</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+
+      {editing && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => { setEdit(null); setAdding(false); }}>
+          <div className="bg-neutral-950 border border-white/10 p-6 max-w-lg w-full space-y-3" onClick={e => e.stopPropagation()}>
+            <h3 className="text-white font-bold uppercase tracking-widest text-sm mb-4">{editing.id ? "Редактировать" : "Новая позиция"}</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <input value={editing.section} onChange={e => setEdit({ ...editing, section: e.target.value })}
+                placeholder="Секция (Кальяны/Напитки)" className={fieldClass} />
+              <input value={editing.category} onChange={e => setEdit({ ...editing, category: e.target.value })}
+                placeholder="Категория" className={fieldClass} />
+            </div>
+            <input value={editing.name} onChange={e => setEdit({ ...editing, name: e.target.value })}
+              placeholder="Название" className={fieldClass} />
+            <textarea value={editing.description} onChange={e => setEdit({ ...editing, description: e.target.value })}
+              placeholder="Описание" rows={2} className={`${fieldClass} resize-none`} />
+            <div className="grid grid-cols-3 gap-3">
+              <input value={editing.price} onChange={e => setEdit({ ...editing, price: e.target.value })}
+                placeholder="650 ₽" className={fieldClass} />
+              <input type="number" value={editing.sortOrder} onChange={e => setEdit({ ...editing, sortOrder: Number(e.target.value) })}
+                placeholder="Порядок" className={fieldClass} />
+              <label className="flex items-center gap-2 text-white text-sm">
+                <input type="checkbox" checked={!!editing.isActive} onChange={e => setEdit({ ...editing, isActive: e.target.checked ? 1 : 0 })} />
+                Активна
+              </label>
+            </div>
+            <div className="flex gap-2 pt-4">
+              <button onClick={() => save(editing)} className="flex-1 bg-lime text-black font-bold uppercase tracking-widest py-2 text-xs hover:bg-lime/80">
+                Сохранить
+              </button>
+              <button onClick={() => { setEdit(null); setAdding(false); }} className="px-4 py-2 border border-white/10 text-gray-400 text-xs uppercase tracking-widest hover:bg-white/5">
+                Отмена
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Gallery tab ───────────────────────────────────────────────────────────────
+function GalleryTab() {
+  const [items, setItems] = useState<Array<{ id: number; url: string; caption: string; sortOrder: number }>>([]);
+  const [form, setForm] = useState({ url: "", caption: "", sortOrder: 0 });
+
+  const load = () => fetch(`${API_BASE}/gallery`).then(r => r.json()).then(setItems);
+  useEffect(() => { load(); }, []);
+
+  const add = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.url) return;
+    await adminFetch(`${API_BASE}/gallery`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+    setForm({ url: "", caption: "", sortOrder: 0 }); load();
+  };
+
+  const del = async (id: number) => {
+    if (!confirm("Удалить фото?")) return;
+    await adminFetch(`${API_BASE}/gallery/${id}`, { method: "DELETE" });
+    load();
+  };
+
+  const fieldClass = "w-full bg-neutral-900 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:border-lime";
+
+  return (
+    <div>
+      <h2 className="text-white font-bold uppercase tracking-widest text-sm mb-2">Галерея</h2>
+      <p className="text-gray-500 text-xs mb-6">Добавляйте URL фотографий (Instagram, облако, любая публичная ссылка). Если галерея пуста, на сайте показываются дефолтные фото.</p>
+
+      <form onSubmit={add} className="border border-white/5 p-4 mb-8 grid md:grid-cols-[2fr_1fr_80px_auto] gap-2">
+        <input value={form.url} onChange={e => setForm({ ...form, url: e.target.value })}
+          placeholder="https://..." required className={fieldClass} />
+        <input value={form.caption} onChange={e => setForm({ ...form, caption: e.target.value })}
+          placeholder="Подпись" className={fieldClass} />
+        <input type="number" value={form.sortOrder} onChange={e => setForm({ ...form, sortOrder: Number(e.target.value) })}
+          placeholder="№" className={fieldClass} />
+        <button type="submit" className="bg-lime text-black px-4 font-bold uppercase tracking-widest text-xs hover:bg-lime/80">+ Добавить</button>
+      </form>
+
+      {items.length === 0 ? (
+        <p className="text-gray-600 text-center py-12 border border-white/5">Галерея пуста. Покажутся дефолтные фото сайта.</p>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          {items.map(it => (
+            <div key={it.id} className="border border-white/5 p-2 group relative">
+              <div className="aspect-[4/3] bg-neutral-900 overflow-hidden mb-2">
+                <img src={it.url} alt={it.caption} className="w-full h-full object-cover" onError={e => (e.currentTarget.style.opacity = "0.2")} />
+              </div>
+              <p className="text-white text-xs truncate">{it.caption || "Без подписи"}</p>
+              <p className="text-gray-600 text-xs">№ {it.sortOrder}</p>
+              <button onClick={() => del(it.id)}
+                className="absolute top-3 right-3 bg-red-500/80 text-white text-xs px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Reviews moderation tab ────────────────────────────────────────────────────
+function ReviewsTab() {
+  const [reviews, setReviews] = useState<Array<{ id: number; name: string; text: string; rating: number; source: string; isPublished: number; createdAt: string }>>([]);
+  const load = () => adminFetch(`${API_BASE}/reviews/all`).then(r => r.json()).then(setReviews);
+
+  const togglePublish = async (id: number, isPublished: number) => {
+    await adminFetch(`${API_BASE}/reviews/${id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isPublished: isPublished ? 0 : 1 }),
+    });
+    load();
+  };
+  useEffect(() => { load(); }, []);
+
+  const del = async (id: number) => {
+    if (!confirm("Удалить отзыв?")) return;
+    await adminFetch(`${API_BASE}/reviews/${id}`, { method: "DELETE" });
+    load();
+  };
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-white font-bold uppercase tracking-widest text-sm">Отзывы — {reviews.length}</h2>
+        <button onClick={load} className="text-xs text-gray-500 hover:text-lime border border-white/10 px-3 py-1.5 uppercase tracking-widest">Обновить</button>
+      </div>
+      {reviews.length === 0 ? (
+        <p className="text-gray-600 text-center py-12 border border-white/5">Пока нет отзывов</p>
+      ) : (
+        <div className="space-y-3">
+          {reviews.map(r => (
+            <div key={r.id} className="border border-white/5 p-4">
+              <div className="flex justify-between items-start mb-2 flex-wrap gap-2">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="text-white font-medium">{r.name}</span>
+                  <span className="text-lime text-sm">{"★".repeat(r.rating)}<span className="text-gray-700">{"★".repeat(5 - r.rating)}</span></span>
+                  {r.source === "telegram" && (
+                    <span className="text-[10px] uppercase tracking-widest border border-lime/30 text-lime px-2 py-0.5">Telegram</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-gray-600 text-xs">{new Date(r.createdAt).toLocaleString("ru-RU")}</span>
+                  <button onClick={() => togglePublish(r.id, r.isPublished)}
+                    className={`text-xs border px-2 py-1 ${r.isPublished
+                      ? "border-green-500/40 text-green-400 hover:bg-green-500/10"
+                      : "border-yellow-500/40 text-yellow-400 hover:bg-yellow-500/10"}`}>
+                    {r.isPublished ? "✓ Опубликован" : "Скрыт"}
+                  </button>
+                  <button onClick={() => del(r.id)} className="text-xs text-red-400 border border-red-500/30 px-2 py-1 hover:bg-red-500/10">Удалить</button>
+                </div>
+              </div>
+              <p className="text-gray-300 text-sm font-light">«{r.text}»</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Admin panel shell ─────────────────────────────────────────────────────────
 function AdminPanel() {
-  const [tab, setTab] = useState<"bookings" | "stats" | "tables">("bookings");
+  const [tab, setTab] = useState<"bookings" | "stats" | "tables" | "settings" | "menu" | "gallery" | "reviews">("bookings");
   const TABS = [
     { key: "bookings", label: "Брони" },
     { key: "stats",    label: "Статистика" },
     { key: "tables",   label: "QR столов" },
+    { key: "settings", label: "Контент" },
+    { key: "menu",     label: "Меню" },
+    { key: "gallery",  label: "Галерея" },
+    { key: "reviews",  label: "Отзывы" },
   ] as const;
   return (
     <div className="min-h-screen bg-black text-white">
@@ -344,8 +722,14 @@ function AdminPanel() {
           ))}
         </div>
       </header>
-      <div className="max-w-5xl mx-auto px-4 py-8">
-        {tab === "bookings" ? <BookingsTab /> : tab === "stats" ? <StatsTab /> : <TablesTab />}
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        {tab === "bookings" && <BookingsTab />}
+        {tab === "stats" && <StatsTab />}
+        {tab === "tables" && <TablesTab />}
+        {tab === "settings" && <SettingsTab />}
+        {tab === "menu" && <MenuCmsTab />}
+        {tab === "gallery" && <GalleryTab />}
+        {tab === "reviews" && <ReviewsTab />}
       </div>
     </div>
   );

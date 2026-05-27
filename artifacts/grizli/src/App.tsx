@@ -8,6 +8,8 @@ import Menu from "@/pages/Menu";
 import Gallery from "@/pages/Gallery";
 import Card from "@/pages/Card";
 import Booking from "@/pages/Booking";
+import Reviews from "@/pages/Reviews";
+import Loyalty from "@/pages/Loyalty";
 import LoyaltyCard from "@/pages/LoyaltyCard";
 import LoyaltyScanner from "@/pages/LoyaltyScanner";
 
@@ -20,6 +22,8 @@ function Router() {
       <Route path="/menu" component={Menu} />
       <Route path="/gallery" component={Gallery} />
       <Route path="/booking" component={Booking} />
+      <Route path="/reviews" component={Reviews} />
+      <Route path="/loyalty" component={Loyalty} />
       <Route path="/card" component={Card} />
       <Route path="/loyalty/scan" component={LoyaltyScanner} />
       <Route path="/loyalty/:token" component={LoyaltyCard} />

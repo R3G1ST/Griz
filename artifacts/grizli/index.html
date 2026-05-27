@@ -1,29 +1,66 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    <title>Гризли — Кальянная</title>
-    <meta name="description" content="ГРИЗЛИ — премиальный лаунж-бар в Тюмени. Кальяны, авторские коктейли, атмосфера. Бронирование онлайн. Ул. Новосёлов, 92." />
-    <meta name="keywords" content="кальянная Тюмень, лаунж бар Тюмень, кальян Тюмень, Гризли лаунж, бронирование кальян" />
-    <meta name="robots" content="index, follow" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>ГРИЗЛИ — Кальянная Тюмень · Лаунж-бар на Новосёлов 92</title>
+    <meta name="description" content="ГРИЗЛИ — премиальный лаунж-бар в Тюмени. Кальяны, авторские коктейли, атмосфера. Онлайн-бронирование. Ул. Новосёлов, 92. Открыты до 4:00." />
+    <meta name="keywords" content="кальянная Тюмень, лаунж бар Тюмень, кальян Тюмень, Гризли лаунж, бронирование кальян, ГРИЗЛИ Тюмень, кальянная Новосёлов" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="theme-color" content="#0a0a0a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="ГРИЗЛИ" />
     <meta name="geo.region" content="RU-TYU" />
     <meta name="geo.placename" content="Тюмень" />
+    <meta name="geo.position" content="57.1130;65.6015" />
+    <meta name="ICBM" content="57.1130, 65.6015" />
 
+    <meta property="og:site_name" content="ГРИЗЛИ Hookah Lounge" />
     <meta property="og:title" content="ГРИЗЛИ — Лаунж Бар | Тюмень" />
     <meta property="og:description" content="Премиальный лаунж для тех, кто знает цену времени. Кальяны, коктейли, полумрак. Ул. Новосёлов, 92." />
-    <meta property="og:type" content="restaurant" />
+    <meta property="og:type" content="restaurant.bar" />
     <meta property="og:locale" content="ru_RU" />
-    <meta property="og:image" content="/og-image.jpg" />
+    <meta property="og:image" content="/opengraph.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="ГРИЗЛИ — Лаунж Бар | Тюмень" />
-    <meta name="twitter:description" content="Премиальный лаунж для тех, кто знает цену времени. Кальяны, коктейли, полумрак." />
-    <meta name="twitter:image" content="/og-image.jpg" />
+    <meta name="twitter:description" content="Премиальный лаунж для тех, кто знает цену времени." />
+    <meta name="twitter:image" content="/opengraph.jpg" />
+
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BarOrPub",
+      "name": "ГРИЗЛИ Hookah Lounge",
+      "image": "/opengraph.jpg",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "ул. Новосёлов, 92",
+        "addressLocality": "Тюмень",
+        "addressRegion": "Тюменская область",
+        "addressCountry": "RU"
+      },
+      "geo": { "@type": "GeoCoordinates", "latitude": 57.1130, "longitude": 65.6015 },
+      "telephone": "+7-916-328-38-91",
+      "url": "/",
+      "priceRange": "₽₽",
+      "servesCuisine": ["Кальяны", "Коктейли", "Чай"],
+      "openingHoursSpecification": [
+        { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday","Tuesday","Wednesday","Thursday","Sunday"], "opens": "15:00", "closes": "02:00" },
+        { "@type": "OpeningHoursSpecification", "dayOfWeek": ["Friday","Saturday"], "opens": "15:00", "closes": "04:00" }
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
