@@ -3,8 +3,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { Send, Gift, Star, TrendingUp } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-
-const BOT_URL = "https://t.me/grizli_loyalty_bot";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const TIERS = [
   { name: "Бронза",   threshold: "0 – 9 визитов",     bonus: "5%",  color: "from-amber-700/40 to-amber-900/40", text: "text-amber-400" },
@@ -20,6 +19,8 @@ const PERKS = [
 ];
 
 export default function Loyalty() {
+  const { loyalty } = useSiteSettings();
+  const BOT_URL = `https://t.me/${loyalty.botUsername.replace(/^@/, "")}`;
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="bg-noise" />
@@ -28,14 +29,14 @@ export default function Loyalty() {
       <div className="pt-28 pb-20 px-4 sm:px-6 max-w-6xl mx-auto">
 
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="mb-12">
-          <p className="text-primary text-xs uppercase tracking-[0.4em] mb-4">Программа</p>
+          <p className="text-primary text-xs uppercase tracking-[0.4em] mb-4">{loyalty.tagline}</p>
           <h1 className="font-serif font-bold text-white uppercase break-words"
               style={{ fontSize: "clamp(2.5rem, 10vw, 6.5rem)", lineHeight: 0.95 }}>
             Лояльность
           </h1>
           <div className="w-20 h-px bg-primary mt-6" />
           <p className="text-muted-foreground font-light mt-6 max-w-xl">
-            Цифровая карта в Telegram. Никакого пластика — только баллы, статусы и приглашения на закрытые вечера.
+            {loyalty.description}
           </p>
         </motion.div>
 

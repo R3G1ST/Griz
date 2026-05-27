@@ -357,6 +357,9 @@ function SettingsTab() {
   const about = data.about || {};
   const schedule = data.schedule || [];
   const rules = data.rules || [];
+  const brand = data.brand || {};
+  const loyalty = data.loyalty || {};
+  const footer = data.footer || {};
 
   const fieldClass = "w-full bg-neutral-900 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:border-lime";
   const labelClass = "block text-xs text-gray-500 uppercase tracking-widest mb-1";
@@ -369,6 +372,26 @@ function SettingsTab() {
 
   return (
     <div className="max-w-3xl">
+      {/* Brand */}
+      <div className={sectionClass}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-white font-bold uppercase tracking-widest text-sm">Бренд</h3>
+          {saveBtn("brand")}
+        </div>
+        <p className="text-gray-500 text-xs mb-3">Название, город, год основания. Используется в шапке, бейдже на главной и подвале.</p>
+        <div className="grid md:grid-cols-2 gap-3">
+          {[
+            ["name","Название"],["city","Город"],
+            ["estYear","Год основания"],["badgeText","Текст бейджа на главной"],
+          ].map(([key, label]) => (
+            <div key={key}>
+              <label className={labelClass}>{label}</label>
+              <input value={brand[key] || ""} onChange={e => update("brand", { ...brand, [key]: e.target.value })} className={fieldClass} />
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Contacts */}
       <div className={sectionClass}>
         <div className="flex items-center justify-between mb-4">
@@ -446,6 +469,39 @@ function SettingsTab() {
           className="text-xs text-lime border border-lime/30 px-3 py-2 hover:bg-lime/10 uppercase tracking-widest">+ Строка</button>
       </div>
 
+      {/* Loyalty */}
+      <div className={sectionClass}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-white font-bold uppercase tracking-widest text-sm">Лояльность</h3>
+          {saveBtn("loyalty")}
+        </div>
+        <p className="text-gray-500 text-xs mb-3">Юзернейм Telegram-бота (без @) — используется в QR-коде и кнопках на странице /loyalty.</p>
+        <div className="grid md:grid-cols-2 gap-3 mb-3">
+          <div>
+            <label className={labelClass}>Юзернейм бота</label>
+            <input value={loyalty.botUsername || ""} onChange={e => update("loyalty", { ...loyalty, botUsername: e.target.value })} placeholder="GrizzlyLoyalty_bot" className={fieldClass} />
+          </div>
+          <div>
+            <label className={labelClass}>Надзаголовок (программа)</label>
+            <input value={loyalty.tagline || ""} onChange={e => update("loyalty", { ...loyalty, tagline: e.target.value })} className={fieldClass} />
+          </div>
+        </div>
+        <label className={labelClass}>Описание программы</label>
+        <textarea value={loyalty.description || ""} onChange={e => update("loyalty", { ...loyalty, description: e.target.value })} rows={3} className={`${fieldClass} resize-none`} />
+      </div>
+
+      {/* Footer */}
+      <div className={sectionClass}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-white font-bold uppercase tracking-widest text-sm">Подвал сайта</h3>
+          {saveBtn("footer")}
+        </div>
+        <label className={labelClass}>Слоган</label>
+        <input value={footer.tagline || ""} onChange={e => update("footer", { ...footer, tagline: e.target.value })} className={`${fieldClass} mb-3`} />
+        <label className={labelClass}>Копирайт</label>
+        <input value={footer.copyright || ""} onChange={e => update("footer", { ...footer, copyright: e.target.value })} placeholder="© ГРИЗЛИ Hookah Lounge" className={fieldClass} />
+      </div>
+
       {/* Rules */}
       <div className={sectionClass}>
         <div className="flex items-center justify-between mb-4">
@@ -507,7 +563,40 @@ function MenuCmsTab() {
     (acc[k] ||= []).push(it); return acc;
   }, {});
 
-  const editing = edit || (adding ? { id: 0, section: "Кальяны", category: "", name: "", description: "", price: "", sortOrder: 0, isActive: 1 } as MenuItem : null);
+  // Existing sections & categories — for autocomplete and category management
+  const allSections = Array.from(new Set(items.map(i => i.section).filter(Boolean))).sort();
+  const allCategories = Array.from(new Set(items.map(i => i.category).filter(Boolean))).sort();
+  const categoriesBySection = items.reduce<Record<string, Set<string>>>((acc, it) => {
+    if (!it.section) return acc;
+    (acc[it.section] ||= new Set()).add(it.category);
+    return acc;
+  }, {});
+
+  // Bulk rename helpers — minimal PATCH-style payload so we never overwrite
+  // other fields that may have changed since the list was loaded.
+  const bulkPatch = async (affected: MenuItem[], patch: Partial<MenuItem>, label: string) => {
+    const results = await Promise.allSettled(
+      affected.map(i => adminFetch(`${API_BASE}/menu/${i.id}`, {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch),
+      }).then(r => { if (!r.ok) throw new Error(String(r.status)); return r; }))
+    );
+    const failed = results.filter(r => r.status === "rejected").length;
+    if (failed) alert(`${label}: ${affected.length - failed} из ${affected.length} обновлены, ${failed} с ошибкой.`);
+    load();
+  };
+  const renameSection = async (oldName: string) => {
+    const next = prompt(`Переименовать секцию «${oldName}» во всех позициях:`, oldName)?.trim();
+    if (!next || next === oldName) return;
+    await bulkPatch(items.filter(i => i.section === oldName), { section: next }, "Переименование секции");
+  };
+  const renameCategory = async (section: string, oldCat: string) => {
+    const next = prompt(`Переименовать категорию «${oldCat}» в секции «${section}»:`, oldCat)?.trim();
+    if (!next || next === oldCat) return;
+    await bulkPatch(items.filter(i => i.section === section && i.category === oldCat), { category: next }, "Переименование категории");
+  };
+
+  const editing = edit || (adding ? { id: 0, section: allSections[0] || "Кальяны", category: "", name: "", description: "", price: "", sortOrder: 0, isActive: 1 } as MenuItem : null);
   const fieldClass = "w-full bg-neutral-900 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:border-lime";
 
   return (
@@ -517,35 +606,68 @@ function MenuCmsTab() {
         <button onClick={() => { setAdding(true); setEdit(null); }} className="px-4 py-2 bg-lime text-black text-xs uppercase tracking-widest font-bold hover:bg-lime/80">+ Добавить</button>
       </div>
 
-      {Object.entries(grouped).map(([groupKey, list]) => (
-        <div key={groupKey} className="mb-8">
-          <h3 className="text-lime text-xs uppercase tracking-widest mb-3">{groupKey}</h3>
-          <div className="space-y-1">
-            {list.map(it => (
-              <div key={it.id} className={`border border-white/5 p-3 flex items-center justify-between gap-3 hover:border-white/15 ${!it.isActive && "opacity-40"}`}>
-                <div className="flex-1 min-w-0">
-                  <div className="text-white text-sm font-medium">{it.name}</div>
-                  <div className="text-gray-500 text-xs truncate">{it.description}</div>
-                </div>
-                <span className="text-lime text-sm whitespace-nowrap">{it.price}</span>
-                <button onClick={() => startEdit(it)} className="text-xs text-gray-400 hover:text-lime border border-white/10 px-2 py-1">Ред.</button>
-                <button onClick={() => del(it.id)} className="text-xs text-red-400 hover:bg-red-500/10 border border-red-500/30 px-2 py-1">✕</button>
-              </div>
-            ))}
+      {/* Hierarchical view: section → category → items, with bulk rename */}
+      {Object.entries(categoriesBySection).sort(([a],[b]) => a.localeCompare(b)).map(([section, cats]) => (
+        <div key={section} className="mb-8 border border-white/5 p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lime text-sm uppercase tracking-widest">{section}</h3>
+            <button onClick={() => renameSection(section)} className="text-[10px] text-gray-500 hover:text-lime border border-white/10 px-2 py-1 uppercase tracking-widest">Переименовать секцию</button>
           </div>
+          {Array.from(cats).sort().map(cat => (
+            <div key={cat} className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-white/70 text-xs uppercase tracking-widest">{cat || "(без категории)"}</h4>
+                {cat && (
+                  <button onClick={() => renameCategory(section, cat)} className="text-[10px] text-gray-600 hover:text-lime px-2">Переименовать</button>
+                )}
+              </div>
+              <div className="space-y-1">
+                {items.filter(i => i.section === section && i.category === cat).map(it => (
+                  <div key={it.id} className={`border border-white/5 p-3 flex items-center justify-between gap-3 hover:border-white/15 ${!it.isActive ? "opacity-40" : ""}`}>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-white text-sm font-medium">{it.name}</div>
+                      <div className="text-gray-500 text-xs truncate">{it.description}</div>
+                    </div>
+                    <span className="text-lime text-sm whitespace-nowrap">{it.price}</span>
+                    <button onClick={() => startEdit(it)} className="text-xs text-gray-400 hover:text-lime border border-white/10 px-2 py-1">Ред.</button>
+                    <button onClick={() => del(it.id)} className="text-xs text-red-400 hover:bg-red-500/10 border border-red-500/30 px-2 py-1">✕</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       ))}
+
+      {items.length === 0 && (
+        <div className="border border-white/5 p-12 text-center text-gray-600 text-sm">
+          Меню пусто. Нажмите «+ Добавить», чтобы создать первую позицию.
+        </div>
+      )}
 
       {editing && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => { setEdit(null); setAdding(false); }}>
           <div className="bg-neutral-950 border border-white/10 p-6 max-w-lg w-full space-y-3" onClick={e => e.stopPropagation()}>
             <h3 className="text-white font-bold uppercase tracking-widest text-sm mb-4">{editing.id ? "Редактировать" : "Новая позиция"}</h3>
             <div className="grid grid-cols-2 gap-3">
-              <input value={editing.section} onChange={e => setEdit({ ...editing, section: e.target.value })}
-                placeholder="Секция (Кальяны/Напитки)" className={fieldClass} />
-              <input value={editing.category} onChange={e => setEdit({ ...editing, category: e.target.value })}
-                placeholder="Категория" className={fieldClass} />
+              <div>
+                <input list="sections-list" value={editing.section} onChange={e => setEdit({ ...editing, section: e.target.value })}
+                  placeholder="Секция (Кальяны/Напитки/Закуски)" className={fieldClass} />
+                <datalist id="sections-list">
+                  {allSections.map(s => <option key={s} value={s} />)}
+                </datalist>
+              </div>
+              <div>
+                <input list="categories-list" value={editing.category} onChange={e => setEdit({ ...editing, category: e.target.value })}
+                  placeholder="Категория (Классика / Премиум)" className={fieldClass} />
+                <datalist id="categories-list">
+                  {(editing.section && categoriesBySection[editing.section]
+                    ? Array.from(categoriesBySection[editing.section])
+                    : allCategories).map(c => <option key={c} value={c} />)}
+                </datalist>
+              </div>
             </div>
+            <p className="text-gray-600 text-[10px] uppercase tracking-widest">Можно вводить свои значения — категории создаются автоматически</p>
             <input value={editing.name} onChange={e => setEdit({ ...editing, name: e.target.value })}
               placeholder="Название" className={fieldClass} />
             <textarea value={editing.description} onChange={e => setEdit({ ...editing, description: e.target.value })}

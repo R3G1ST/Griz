@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Star, MessageCircle, Send as TgIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
-import { useReviews } from "@/hooks/useSiteSettings";
+import { useReviews, useSiteSettings } from "@/hooks/useSiteSettings";
 
 const fadeIn = {
   hidden: { opacity: 0, y: 24 },
@@ -14,6 +14,8 @@ const inputClass = "w-full bg-background border border-white/10 px-4 py-3 text-w
 
 export default function Reviews() {
   const { reviews, submit } = useReviews();
+  const { loyalty } = useSiteSettings();
+  const botUrl = `https://t.me/${loyalty.botUsername.replace(/^@/, "")}?start=review`;
   const [form, setForm] = useState({ name: "", text: "", rating: 5 });
   const [state, setState] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [showForm, setShowForm] = useState(false);
@@ -79,7 +81,7 @@ export default function Reviews() {
             {showForm ? "Скрыть форму" : "Оставить отзыв"}
           </button>
           <a
-            href="https://t.me/grizli_loyalty_bot?start=review"
+            href={botUrl}
             target="_blank" rel="noopener noreferrer"
             className="flex items-center justify-center gap-3 border border-white/15 text-white uppercase tracking-widest text-xs h-14 hover:border-primary/50 hover:text-primary transition-colors"
           >

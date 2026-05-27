@@ -68,9 +68,28 @@ router.put("/menu/:id", requireAdmin, async (req: Request, res: Response) => {
     if (!Number.isFinite(id)) { res.status(400).json({ error: "bad id" }); return; }
     const b = req.body ?? {};
     const updates: Record<string, unknown> = {};
-    for (const k of ["section", "category", "name", "description", "price", "sortOrder", "isActive"] as const) {
-      if (k in b) updates[k] = b[k];
+
+    // String fields: trim, enforce non-empty + length limits to prevent invalid persisted state
+    for (const k of ["section", "category", "name", "price"] as const) {
+      if (k in b) {
+        if (typeof b[k] !== "string") { res.status(400).json({ error: `${k} must be string` }); return; }
+        const v = b[k].trim();
+        if (!v) { res.status(400).json({ error: `${k} is empty` }); return; }
+        if (v.length > 200) { res.status(400).json({ error: `${k} too long` }); return; }
+        updates[k] = v;
+      }
     }
+    if ("description" in b) {
+      const v = typeof b.description === "string" ? b.description.slice(0, 1000) : "";
+      updates.description = v;
+    }
+    if ("sortOrder" in b) {
+      const n = Number(b.sortOrder);
+      if (!Number.isFinite(n)) { res.status(400).json({ error: "sortOrder NaN" }); return; }
+      updates.sortOrder = n;
+    }
+    if ("isActive" in b) updates.isActive = b.isActive ? 1 : 0;
+
     if (Object.keys(updates).length === 0) { res.status(400).json({ error: "no fields" }); return; }
     const [item] = await db.update(menuItemsTable).set(updates).where(eq(menuItemsTable.id, id)).returning();
     res.json(item);

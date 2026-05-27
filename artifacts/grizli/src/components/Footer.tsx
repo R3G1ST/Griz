@@ -3,13 +3,14 @@ import { Phone, MapPin, Send } from "lucide-react";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 export default function Footer() {
-  const { contacts, schedule } = useSiteSettings();
+  const { contacts, schedule, brand, footer } = useSiteSettings();
   return (
     <footer className="bg-black border-t border-white/5 px-6 pt-16 pb-8">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
         <div>
-          <h3 className="font-serif text-2xl text-primary tracking-widest uppercase mb-3">ГРИЗЛИ</h3>
-          <p className="text-muted-foreground text-sm font-light">Премиальный лаунж в самом сердце Тюмени. Атмосфера, табак, время.</p>
+          <h3 className="font-serif text-2xl text-primary tracking-widest uppercase mb-3">{brand.name}</h3>
+          <p className="text-muted-foreground text-sm font-light">{footer.tagline}</p>
+          <p className="text-white/40 text-[10px] uppercase tracking-[0.3em] mt-4">Основано в {brand.estYear}</p>
         </div>
         <div>
           <h4 className="text-white text-xs tracking-widest uppercase mb-4">Навигация</h4>
@@ -58,7 +59,7 @@ export default function Footer() {
         </div>
       </div>
       <div className="border-t border-white/5 pt-6 flex flex-col md:flex-row justify-between items-center gap-3 max-w-7xl mx-auto">
-        <p className="text-white/30 text-xs tracking-widest uppercase">© {new Date().getFullYear()} ГРИЗЛИ Hookah Lounge</p>
+        <p className="text-white/30 text-xs tracking-widest uppercase">{footer.copyright} · {new Date().getFullYear()}</p>
         <p className="text-white/20 text-xs">18+</p>
       </div>
     </footer>

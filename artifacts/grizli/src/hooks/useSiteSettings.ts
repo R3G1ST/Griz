@@ -15,6 +15,21 @@ export type ScheduleRow = { days: string; hours: string };
 export type HeroSettings = { title1: string; title2: string; subtitle: string };
 export type AboutSettings = { title: string; p1: string; p2: string };
 export type RuleItem = { title: string; text: string };
+export type BrandSettings = {
+  name: string;
+  city: string;
+  estYear: string;
+  badgeText: string;
+};
+export type LoyaltySettings = {
+  botUsername: string;
+  tagline: string;
+  description: string;
+};
+export type FooterSettings = {
+  tagline: string;
+  copyright: string;
+};
 
 export type SiteSettings = {
   contacts?: SiteContacts;
@@ -22,6 +37,9 @@ export type SiteSettings = {
   hero?: HeroSettings;
   about?: AboutSettings;
   rules?: RuleItem[];
+  brand?: BrandSettings;
+  loyalty?: LoyaltySettings;
+  footer?: FooterSettings;
 };
 
 const DEFAULTS: Required<SiteSettings> = {
@@ -45,6 +63,21 @@ const DEFAULTS: Required<SiteSettings> = {
     { title: "Возраст", text: "Строго 18+. Мы оставляем за собой право попросить документ. Без исключений." },
     { title: "Уважение", text: "Не повышаем голос, не включаем видео без наушников. Уважаем отдых друг друга." },
   ],
+  brand: {
+    name: "ГРИЗЛИ",
+    city: "Тюмень",
+    estYear: "2026",
+    badgeText: "Тюмень · с 2026 года",
+  },
+  loyalty: {
+    botUsername: "GrizzlyLoyalty_bot",
+    tagline: "Программа лояльности",
+    description: "Цифровая карта в Telegram. Никакого пластика — только баллы, статусы и приглашения на закрытые вечера.",
+  },
+  footer: {
+    tagline: "Премиальный хука-лаунж в самом сердце Тюмени.",
+    copyright: "© ГРИЗЛИ Hookah Lounge",
+  },
 };
 
 let cache: SiteSettings | null = null;
@@ -74,6 +107,9 @@ export function useSiteSettings(): Required<SiteSettings> {
     hero:     { ...DEFAULTS.hero, ...(s.hero ?? {}) },
     about:    { ...DEFAULTS.about, ...(s.about ?? {}) },
     rules:    s.rules?.length ? s.rules : DEFAULTS.rules,
+    brand:    { ...DEFAULTS.brand, ...(s.brand ?? {}) },
+    loyalty:  { ...DEFAULTS.loyalty, ...(s.loyalty ?? {}) },
+    footer:   { ...DEFAULTS.footer, ...(s.footer ?? {}) },
   };
 }
 

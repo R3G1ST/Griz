@@ -21,7 +21,7 @@ export default function Home() {
   const { scrollY } = useScroll();
   const heroY = useTransform(scrollY, [0, 1000], [0, 300]);
   const heroOpacity = useTransform(scrollY, [0, 600], [1, 0]);
-  const { hero, about, rules, contacts } = useSiteSettings();
+  const { hero, about, rules, contacts, brand } = useSiteSettings();
   const { reviews } = useReviews();
   const avgRating = reviews.length ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1) : null;
 
@@ -45,7 +45,7 @@ export default function Home() {
           <motion.span
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1 }}
             className="text-primary text-[10px] sm:text-xs uppercase tracking-[0.4em] mb-6 border border-primary/30 px-4 py-1.5"
-          >Тюмень · с 2020 года</motion.span>
+          >{brand.badgeText || `${brand.city} · основано в ${brand.estYear}`}</motion.span>
 
           <motion.h1
             initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1, delay: 0.2 }}
