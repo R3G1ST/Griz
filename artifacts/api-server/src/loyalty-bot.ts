@@ -46,6 +46,13 @@ async function send(chatId: number | string, text: string, extra: object = {}) {
   return tg("sendMessage", { chat_id: chatId, text, parse_mode: "HTML", ...extra });
 }
 
+// ── Card URL helper ───────────────────────────────────────────────────────────
+function cardUrl(token: string | null | undefined): string | null {
+  const domain = process.env.REPLIT_DEV_DOMAIN;
+  if (!domain || !token) return null;
+  return `https://${domain}/loyalty/${token}`;
+}
+
 // ── Card renderer ─────────────────────────────────────────────────────────────
 function renderCard(card: LoyaltyCard): { text: string; markup: object } {
   const tier = getTier(card.visits);
@@ -81,15 +88,20 @@ function renderCard(card: LoyaltyCard): { text: string; markup: object } {
     `║ 📅 Последний визит: ${lastVisit}\n` +
     `╚═══════════════════════════╝`;
 
+  const url = cardUrl(card.token);
   const markup = {
     inline_keyboard: [
+      // Row 1: show card to cashier (primary CTA)
+      ...(url ? [[{ text: "📱 Показать кассиру", url }]] : []),
+      // Row 2: stats
       [
-        { text: "🎁 Мои баллы",     callback_data: "balance" },
-        { text: "📊 История",        callback_data: "history" },
+        { text: "🎁 Баллы",    callback_data: "balance" },
+        { text: "📊 История",  callback_data: "history" },
       ],
+      // Row 3: utility
       [
-        { text: "📱 Обновить карту", callback_data: "card" },
-        { text: "🔗 Изменить номер", callback_data: "changephone" },
+        { text: "🔄 Обновить",      callback_data: "card" },
+        { text: "🔗 Изм. номер",    callback_data: "changephone" },
       ],
     ],
   };

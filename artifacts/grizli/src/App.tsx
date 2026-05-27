@@ -7,6 +7,8 @@ import Home from "@/pages/Home";
 import Menu from "@/pages/Menu";
 import Gallery from "@/pages/Gallery";
 import Card from "@/pages/Card";
+import LoyaltyCard from "@/pages/LoyaltyCard";
+import LoyaltyScanner from "@/pages/LoyaltyScanner";
 
 const queryClient = new QueryClient();
 
@@ -17,6 +19,8 @@ function Router() {
       <Route path="/menu" component={Menu} />
       <Route path="/gallery" component={Gallery} />
       <Route path="/card" component={Card} />
+      <Route path="/loyalty/scan" component={LoyaltyScanner} />
+      <Route path="/loyalty/:token" component={LoyaltyCard} />
       <Route component={NotFound} />
     </Switch>
   );

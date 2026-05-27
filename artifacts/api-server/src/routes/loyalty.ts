@@ -23,6 +23,16 @@ async function findCardByPhone(phone: string) {
   return card ?? null;
 }
 
+// ── Card by token (for PWA page) ──────────────────────────────────────────────
+router.get("/loyalty/card/:token", async (req: Request, res: Response) => {
+  const { token } = req.params;
+  const [card] = await db.select().from(loyaltyCardsTable)
+    .where(eq(loyaltyCardsTable.token, token)).catch(() => []);
+  if (!card) { res.status(404).json({ error: "Card not found" }); return; }
+  const tier = getTier(card.visits);
+  res.json({ ...card, found: true, tier_info: { name: tier.name, emoji: tier.emoji, discount: tier.discount, bonus_rate: tier.bonusRate, nextAt: tier.nextAt } });
+});
+
 // ── Webhook from Telegram ─────────────────────────────────────────────────────
 router.post("/loyalty/tg", async (req: Request, res: Response) => {
   res.json({ ok: true }); // respond fast

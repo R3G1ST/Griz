@@ -1,7 +1,8 @@
-import { pgTable, serial, text, timestamp, integer, bigint } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, timestamp, integer, bigint, uuid } from "drizzle-orm/pg-core";
 
 export const loyaltyCardsTable = pgTable("loyalty_cards", {
   id:           serial("id").primaryKey(),
+  token:        uuid("token").unique().defaultRandom(),
   telegramId:   bigint("telegram_id", { mode: "number" }).unique(),
   phone:        text("phone").unique(),
   name:         text("name").notNull().default(""),
