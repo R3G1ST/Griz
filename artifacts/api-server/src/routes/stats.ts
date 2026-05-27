@@ -59,4 +59,55 @@ router.get("/stats", async (_req: Request, res: Response) => {
   }
 });
 
+// GET /api/stats/heatmap?days=28
+// Returns occupancy buckets aggregated over day-of-week × hour for confirmed bookings
+// in the trailing `days` window. Hours 0-2 are mapped to 24-26 so the night session
+// stays contiguous on the chart (16:00 → 02:00 of the next day).
+//   dow: 0=Mon ... 6=Sun (ISO week order)
+//   hour: 16..26 (where 24=00:00, 25=01:00, 26=02:00)
+router.get("/stats/heatmap", async (req: Request, res: Response) => {
+  const daysRaw = Number(req.query.days ?? 28);
+  const days = Number.isFinite(daysRaw) && daysRaw > 0 && daysRaw <= 365 ? Math.floor(daysRaw) : 28;
+  try {
+    // Tyumen tz = Asia/Yekaterinburg (UTC+5, no DST). Window is anchored to local "today"
+    // and goes back `days - 1` calendar days so the count is inclusive (e.g. days=7 = a week).
+    // For DOW we map ISO Mon=1..Sun=7 to Mon=0..Sun=6 once. Hours 00:00–02:00 belong to the
+    // *previous* day's evening session, so we shift them: hour += 24 AND dow = (dow + 6) % 7.
+    const rows = await db.execute(sql`
+      WITH src AS (
+        SELECT
+          ((EXTRACT(ISODOW FROM date::date)::int + 6) % 7) AS dow_base,
+          LEFT(time, 2)::int AS hour_raw,
+          guests
+        FROM ${bookingsTable}
+        WHERE status = 'confirmed'
+          AND date::date >= ((timezone('Asia/Yekaterinburg', NOW()))::date - ((${days} - 1) || ' days')::interval)::date
+          AND date::date <= (timezone('Asia/Yekaterinburg', NOW()))::date
+      ),
+      shifted AS (
+        SELECT
+          CASE WHEN hour_raw < 3 THEN (dow_base + 6) % 7 ELSE dow_base END AS dow,
+          CASE WHEN hour_raw < 3 THEN hour_raw + 24      ELSE hour_raw  END AS hour,
+          guests
+        FROM src
+      )
+      SELECT
+        dow,
+        hour,
+        COUNT(*)::int AS bookings,
+        SUM(guests)::int AS guests
+      FROM shifted
+      GROUP BY dow, hour
+      ORDER BY dow, hour
+    `);
+    res.json({
+      days,
+      cells: ((rows as any).rows ?? []) as { dow: number; hour: number; bookings: number; guests: number }[],
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+});
+
 export default router;

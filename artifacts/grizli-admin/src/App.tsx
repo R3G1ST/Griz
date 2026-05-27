@@ -229,6 +229,165 @@ function StatsTab() {
   );
 }
 
+// ── Heatmap tab — occupancy by day-of-week × hour ─────────────────────────────
+type HeatmapCell = { dow: number; hour: number; bookings: number; guests: number };
+type HeatmapResp = { days: number; cells: HeatmapCell[] };
+
+const DOW_LABELS = ["ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС"];
+const HEATMAP_HOURS = [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26]; // 16:00 — 02:00
+const formatHour = (h: number) => `${String(h % 24).padStart(2, "0")}:00`;
+
+function HeatmapTab() {
+  const [days, setDays] = useState(28);
+  const [data, setData] = useState<HeatmapResp | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [metric, setMetric] = useState<"bookings" | "guests">("bookings");
+
+  useEffect(() => {
+    let ignore = false;
+    setLoading(true);
+    fetch(`${API_BASE}/stats/heatmap?days=${days}`)
+      .then(r => r.json())
+      .then(d => { if (!ignore) setData(d); })
+      .catch(() => {})
+      .finally(() => { if (!ignore) setLoading(false); });
+    return () => { ignore = true; };
+  }, [days]);
+
+  if (loading) return <div className="text-gray-500 text-center py-20">Загрузка...</div>;
+  if (!data) return <div className="text-gray-600 text-center py-20">Нет данных</div>;
+
+  // Build lookup: dow × hour → cell
+  const map = new Map<string, HeatmapCell>();
+  for (const c of data.cells) map.set(`${c.dow}_${c.hour}`, c);
+
+  const maxVal = data.cells.reduce((m, c) => Math.max(m, c[metric]), 0);
+
+  // Peak summary
+  const peakCell = data.cells.reduce<HeatmapCell | null>((best, c) =>
+    !best || c[metric] > best[metric] ? c : best, null);
+  const totalBookings = data.cells.reduce((s, c) => s + c.bookings, 0);
+  const totalGuests   = data.cells.reduce((s, c) => s + c.guests, 0);
+
+  const cellBg = (value: number) => {
+    if (maxVal === 0 || value === 0) return "rgba(255,255,255,0.02)";
+    const ratio = value / maxVal;
+    // Lime gradient: low → faint, high → solid #c8ff00
+    const alpha = Math.max(0.08, ratio);
+    return `rgba(200, 255, 0, ${alpha.toFixed(2)})`;
+  };
+  const cellTextColor = (value: number) => {
+    if (maxVal === 0 || value === 0) return "text-gray-700";
+    return value / maxVal > 0.5 ? "text-black font-bold" : "text-white";
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Controls */}
+      <div className="flex flex-wrap gap-3 items-center">
+        <div className="flex gap-1">
+          {[7, 14, 28, 90].map(d => (
+            <button key={d} onClick={() => setDays(d)}
+              className={`px-3 py-2 text-xs uppercase tracking-widest transition-colors ${days === d ? "bg-lime text-black font-bold" : "border border-white/10 text-gray-400 hover:text-white"}`}>
+              {d} дней
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-1 ml-auto">
+          {(["bookings", "guests"] as const).map(m => (
+            <button key={m} onClick={() => setMetric(m)}
+              className={`px-3 py-2 text-xs uppercase tracking-widest transition-colors ${metric === m ? "bg-lime text-black font-bold" : "border border-white/10 text-gray-400 hover:text-white"}`}>
+              {m === "bookings" ? "Брони" : "Гости"}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* KPI */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="border border-white/5 p-4">
+          <div className="text-2xl font-black text-lime">{totalBookings}</div>
+          <div className="text-xs text-gray-500 uppercase tracking-widest mt-1">Всего броней</div>
+        </div>
+        <div className="border border-white/5 p-4">
+          <div className="text-2xl font-black text-lime">{totalGuests}</div>
+          <div className="text-xs text-gray-500 uppercase tracking-widest mt-1">Всего гостей</div>
+        </div>
+        <div className="border border-white/5 p-4">
+          <div className="text-2xl font-black text-lime">
+            {peakCell ? `${DOW_LABELS[peakCell.dow]} ${formatHour(peakCell.hour)}` : "—"}
+          </div>
+          <div className="text-xs text-gray-500 uppercase tracking-widest mt-1">Пиковое окно</div>
+        </div>
+        <div className="border border-white/5 p-4">
+          <div className="text-2xl font-black text-lime">
+            {peakCell ? peakCell[metric] : 0}
+          </div>
+          <div className="text-xs text-gray-500 uppercase tracking-widest mt-1">
+            {metric === "bookings" ? "Броней в пике" : "Гостей в пике"}
+          </div>
+        </div>
+      </div>
+
+      {/* Heatmap grid */}
+      <div className="border border-white/5 p-4 md:p-6 overflow-x-auto">
+        <h3 className="text-sm text-gray-400 uppercase tracking-widest mb-4">
+          Загрузка по дням и часам — последние {data.days} дней
+        </h3>
+        <div className="inline-block min-w-full">
+          {/* Header row: hours */}
+          <div className="flex gap-1 mb-1">
+            <div className="w-12 shrink-0" />
+            {HEATMAP_HOURS.map(h => (
+              <div key={h} className="flex-1 min-w-[42px] text-center text-[10px] text-gray-500 uppercase tracking-widest">
+                {formatHour(h)}
+              </div>
+            ))}
+          </div>
+          {/* Body rows: weekdays */}
+          {DOW_LABELS.map((label, dow) => (
+            <div key={dow} className="flex gap-1 mb-1">
+              <div className="w-12 shrink-0 flex items-center text-[11px] text-gray-400 uppercase tracking-widest font-bold">
+                {label}
+              </div>
+              {HEATMAP_HOURS.map(hour => {
+                const cell = map.get(`${dow}_${hour}`);
+                const value = cell ? cell[metric] : 0;
+                const title = cell
+                  ? `${label} ${formatHour(hour)} — ${cell.bookings} броней, ${cell.guests} гостей`
+                  : `${label} ${formatHour(hour)} — пусто`;
+                return (
+                  <div
+                    key={hour}
+                    title={title}
+                    className={`flex-1 min-w-[42px] h-12 flex items-center justify-center text-xs transition-colors ${cellTextColor(value)}`}
+                    style={{ background: cellBg(value) }}
+                  >
+                    {value > 0 ? value : ""}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+        {/* Legend */}
+        <div className="flex items-center gap-2 mt-6 text-[10px] text-gray-500 uppercase tracking-widest">
+          <span>Меньше</span>
+          <div className="flex gap-0.5">
+            {[0.08, 0.25, 0.45, 0.65, 0.85, 1].map(a => (
+              <div key={a} className="w-6 h-3" style={{ background: `rgba(200, 255, 0, ${a})` }} />
+            ))}
+          </div>
+          <span>Больше</span>
+          {maxVal > 0 && (
+            <span className="ml-3 text-gray-600">Максимум в ячейке: {maxVal}</span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Tables QR tab ─────────────────────────────────────────────────────────────
 const SITE_DOMAIN = (() => {
   // In admin, API calls go to /api (same origin via proxy), but we need the public site domain for QR
@@ -884,10 +1043,11 @@ function ReviewsTab() {
 
 // ── Admin panel shell ─────────────────────────────────────────────────────────
 function AdminPanel() {
-  const [tab, setTab] = useState<"bookings" | "stats" | "tables" | "settings" | "menu" | "gallery" | "reviews">("bookings");
+  const [tab, setTab] = useState<"bookings" | "stats" | "heatmap" | "tables" | "settings" | "menu" | "gallery" | "reviews">("bookings");
   const TABS = [
     { key: "bookings", label: "Брони" },
     { key: "stats",    label: "Статистика" },
+    { key: "heatmap",  label: "Загрузка" },
     { key: "tables",   label: "QR столов" },
     { key: "settings", label: "Контент" },
     { key: "menu",     label: "Меню" },
@@ -913,6 +1073,7 @@ function AdminPanel() {
       <div className="max-w-6xl mx-auto px-4 py-8">
         {tab === "bookings" && <BookingsTab />}
         {tab === "stats" && <StatsTab />}
+        {tab === "heatmap" && <HeatmapTab />}
         {tab === "tables" && <TablesTab />}
         {tab === "settings" && <SettingsTab />}
         {tab === "menu" && <MenuCmsTab />}
