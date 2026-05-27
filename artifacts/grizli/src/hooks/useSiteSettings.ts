@@ -30,6 +30,22 @@ export type FooterSettings = {
   tagline: string;
   copyright: string;
 };
+// Named image slots — each is the URL that overrides a built-in asset.
+// Empty string means "use bundled default".
+export type ImageSlots = {
+  logo: string;
+  heroBg: string;
+  bearSkull: string;
+  cocktail: string;
+  interior: string;
+};
+export const IMAGE_SLOT_LABELS: Record<keyof ImageSlots, string> = {
+  logo: "Логотип (шапка, карта, /loyalty-card)",
+  heroBg: "Фон главного экрана",
+  bearSkull: "Иллюстрация «О нас» (череп / символ)",
+  cocktail: "Фото «Тёмные материи» (коктейль)",
+  interior: "Большой баннер «Твоя территория»",
+};
 
 export type SiteSettings = {
   contacts?: SiteContacts;
@@ -40,6 +56,7 @@ export type SiteSettings = {
   brand?: BrandSettings;
   loyalty?: LoyaltySettings;
   footer?: FooterSettings;
+  images?: Partial<ImageSlots>;
 };
 
 const DEFAULTS: Required<SiteSettings> = {
@@ -78,6 +95,7 @@ const DEFAULTS: Required<SiteSettings> = {
     tagline: "Премиальный хука-лаунж в самом сердце Тюмени.",
     copyright: "© ГРИЗЛИ Hookah Lounge",
   },
+  images: { logo: "", heroBg: "", bearSkull: "", cocktail: "", interior: "" },
 };
 
 let cache: SiteSettings | null = null;
@@ -110,7 +128,15 @@ export function useSiteSettings(): Required<SiteSettings> {
     brand:    { ...DEFAULTS.brand, ...(s.brand ?? {}) },
     loyalty:  { ...DEFAULTS.loyalty, ...(s.loyalty ?? {}) },
     footer:   { ...DEFAULTS.footer, ...(s.footer ?? {}) },
+    images:   { ...DEFAULTS.images, ...(s.images ?? {}) } as ImageSlots,
   };
+}
+
+// Returns override URL if admin set one, otherwise the bundled default.
+// Accepts Partial<ImageSlots> because the hook merges from the server which may omit keys.
+export function imgSrc(slot: Partial<ImageSlots> | undefined, key: keyof ImageSlots, fallback: string): string {
+  const v = slot?.[key];
+  return v && v.trim() ? v : fallback;
 }
 
 export function refreshSettings() { return load(); }

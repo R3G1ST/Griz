@@ -1,11 +1,12 @@
 import { motion } from "framer-motion";
 import { QRCodeSVG } from "qrcode.react";
 import { MapPin, Phone, Clock, Send, Star } from "lucide-react";
-import logo from "@/assets/images/logo.jpeg";
-import { useSiteSettings } from "@/hooks/useSiteSettings";
+import logoDefault from "@/assets/images/logo.jpeg";
+import { useSiteSettings, imgSrc } from "@/hooks/useSiteSettings";
 
 export default function Card() {
-  const { contacts, schedule } = useSiteSettings();
+  const { contacts, schedule, images } = useSiteSettings();
+  const logo = imgSrc(images, "logo", logoDefault);
   const siteUrl = typeof window !== "undefined" ? `${window.location.protocol}//${window.location.host}` : "";
 
   return (

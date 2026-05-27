@@ -4,12 +4,12 @@ import { Star, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { useSiteSettings, useReviews } from "@/hooks/useSiteSettings";
+import { useSiteSettings, useReviews, imgSrc } from "@/hooks/useSiteSettings";
 
-import heroBg from "@/assets/images/hero-bg.png";
-import bearSkull from "@/assets/images/bear-skull.png";
-import cocktail from "@/assets/images/cocktail.png";
-import interior from "@/assets/images/interior.png";
+import heroBgDefault from "@/assets/images/hero-bg.png";
+import bearSkullDefault from "@/assets/images/bear-skull.png";
+import cocktailDefault from "@/assets/images/cocktail.png";
+import interiorDefault from "@/assets/images/interior.png";
 
 const fadeIn = {
   hidden: { opacity: 0, y: 30 },
@@ -21,7 +21,11 @@ export default function Home() {
   const { scrollY } = useScroll();
   const heroY = useTransform(scrollY, [0, 1000], [0, 300]);
   const heroOpacity = useTransform(scrollY, [0, 600], [1, 0]);
-  const { hero, about, rules, contacts, brand } = useSiteSettings();
+  const { hero, about, rules, contacts, brand, images } = useSiteSettings();
+  const heroBg    = imgSrc(images, "heroBg",    heroBgDefault);
+  const bearSkull = imgSrc(images, "bearSkull", bearSkullDefault);
+  const cocktail  = imgSrc(images, "cocktail",  cocktailDefault);
+  const interior  = imgSrc(images, "interior",  interiorDefault);
   const { reviews } = useReviews();
   const avgRating = reviews.length ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1) : null;
 

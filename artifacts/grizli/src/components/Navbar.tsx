@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu as MenuIcon, X } from "lucide-react";
-import logo from "@/assets/images/logo.jpeg";
+import logoDefault from "@/assets/images/logo.jpeg";
+import { useSiteSettings, imgSrc } from "@/hooks/useSiteSettings";
 
 const NAV_LINKS = [
   { label: "Главная",       href: "/" },
@@ -15,6 +16,8 @@ const NAV_LINKS = [
 ];
 
 export default function Navbar() {
+  const { images } = useSiteSettings();
+  const logo = imgSrc(images, "logo", logoDefault);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [location] = useLocation();
 

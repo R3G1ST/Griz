@@ -2,34 +2,42 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import heroBg from "@/assets/images/hero-bg.png";
-import bearSkull from "@/assets/images/bear-skull.png";
-import cocktail from "@/assets/images/cocktail.png";
-import interior from "@/assets/images/interior.png";
+import { useSiteSettings, imgSrc } from "@/hooks/useSiteSettings";
+import heroBgDefault from "@/assets/images/hero-bg.png";
+import bearSkullDefault from "@/assets/images/bear-skull.png";
+import cocktailDefault from "@/assets/images/cocktail.png";
+import interiorDefault from "@/assets/images/interior.png";
 
 const BASE_URL = import.meta.env.BASE_URL ?? "/";
 const API = (p: string) => `${BASE_URL.endsWith("/") ? BASE_URL.slice(0, -1) : BASE_URL}${p}`;
 
 type GalleryImage = { id: number; url: string; caption: string; sortOrder: number };
 
-const FALLBACK: GalleryImage[] = [
-  { id: -1, url: heroBg,    caption: "Основной зал",   sortOrder: 1 },
-  { id: -2, url: interior,  caption: "Интерьер",        sortOrder: 2 },
-  { id: -3, url: cocktail,  caption: "Бар",             sortOrder: 3 },
-  { id: -4, url: bearSkull, caption: "Арт-объект",      sortOrder: 4 },
-  { id: -5, url: heroBg,    caption: "VIP-зона",        sortOrder: 5 },
-  { id: -6, url: interior,  caption: "Кальянная зона",  sortOrder: 6 },
-];
-
 export default function Gallery() {
   const [photos, setPhotos] = useState<GalleryImage[]>([]);
   const [lightbox, setLightbox] = useState<GalleryImage | null>(null);
+  const { images } = useSiteSettings();
+
+  // Fallback uses the slot-overridden images so admin can replace them in one place
+  const heroBg    = imgSrc(images, "heroBg",    heroBgDefault);
+  const bearSkull = imgSrc(images, "bearSkull", bearSkullDefault);
+  const cocktail  = imgSrc(images, "cocktail",  cocktailDefault);
+  const interior  = imgSrc(images, "interior",  interiorDefault);
+  const FALLBACK: GalleryImage[] = [
+    { id: -1, url: heroBg,    caption: "Основной зал",   sortOrder: 1 },
+    { id: -2, url: interior,  caption: "Интерьер",        sortOrder: 2 },
+    { id: -3, url: cocktail,  caption: "Бар",             sortOrder: 3 },
+    { id: -4, url: bearSkull, caption: "Арт-объект",      sortOrder: 4 },
+    { id: -5, url: heroBg,    caption: "VIP-зона",        sortOrder: 5 },
+    { id: -6, url: interior,  caption: "Кальянная зона",  sortOrder: 6 },
+  ];
 
   useEffect(() => {
     fetch(API("/api/gallery")).then(r => r.json()).then((d: GalleryImage[]) => {
       setPhotos(d.length > 0 ? d : FALLBACK);
     }).catch(() => setPhotos(FALLBACK));
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [images.heroBg, images.bearSkull, images.cocktail, images.interior]);
 
   return (
     <main className="min-h-screen bg-background text-foreground">

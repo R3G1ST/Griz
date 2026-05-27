@@ -360,6 +360,14 @@ function SettingsTab() {
   const brand = data.brand || {};
   const loyalty = data.loyalty || {};
   const footer = data.footer || {};
+  const images = data.images || {};
+  const IMAGE_SLOTS: Array<[string, string, string]> = [
+    ["logo",      "Логотип",                            "Шапка сайта, страница /card, цифровая карта /loyalty-card"],
+    ["heroBg",    "Фон главного экрана",                "Большое фото за заголовком на главной + первая плитка в галерее"],
+    ["bearSkull", "Иллюстрация «О нас»",                "Изображение в блоке «Глубже, чем кальянная» и в галерее"],
+    ["cocktail",  "Фото «Тёмные материи» (бар)",         "Вертикальное фото в блоке про коктейли и в галерее"],
+    ["interior",  "Большой баннер «Твоя территория»",   "Широкий баннер интерьера на главной и в галерее"],
+  ];
 
   const fieldClass = "w-full bg-neutral-900 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:border-lime";
   const labelClass = "block text-xs text-gray-500 uppercase tracking-widest mb-1";
@@ -502,6 +510,51 @@ function SettingsTab() {
         <input value={footer.copyright || ""} onChange={e => update("footer", { ...footer, copyright: e.target.value })} placeholder="© ГРИЗЛИ Hookah Lounge" className={fieldClass} />
       </div>
 
+      {/* Images — per-slot photo overrides */}
+      <div className={sectionClass}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-white font-bold uppercase tracking-widest text-sm">Фото на сайте</h3>
+          {saveBtn("images")}
+        </div>
+        <p className="text-gray-500 text-xs mb-4">
+          Каждое из пяти ключевых изображений сайта можно заменить, вставив URL картинки.
+          Оставьте поле пустым — будет использовано встроенное фото по умолчанию.
+          Загрузить файл можно через вкладку «Галерея» (получите URL и вставьте сюда).
+        </p>
+        <div className="space-y-4">
+          {IMAGE_SLOTS.map(([key, label, hint]) => {
+            const url = images[key] || "";
+            return (
+              <div key={key} className="border border-white/5 p-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-20 h-20 flex-shrink-0 bg-neutral-900 border border-white/10 overflow-hidden flex items-center justify-center">
+                    {url ? (
+                      <img src={url} alt={label} className="w-full h-full object-cover" onError={e => { (e.currentTarget as HTMLImageElement).style.opacity = "0.2"; }} />
+                    ) : (
+                      <span className="text-gray-700 text-[10px] uppercase tracking-widest text-center px-1">по&nbsp;умолчанию</span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <label className="block text-white text-sm font-medium mb-0.5">{label}</label>
+                    <p className="text-gray-600 text-[11px] mb-2 leading-snug">{hint}</p>
+                    <div className="flex gap-2">
+                      <input value={url}
+                        onChange={e => update("images", { ...images, [key]: e.target.value })}
+                        placeholder="https://… или /uploads/…"
+                        className={`${fieldClass} text-xs`} />
+                      {url && (
+                        <button onClick={() => update("images", { ...images, [key]: "" })}
+                          className="px-3 text-gray-500 hover:text-red-400 border border-white/10 text-[10px] uppercase tracking-widest">Сброс</button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Rules */}
       <div className={sectionClass}>
         <div className="flex items-center justify-between mb-4">
@@ -535,10 +588,12 @@ type MenuItem = { id: number; section: string; category: string; name: string; d
 function MenuCmsTab() {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [edit, setEdit] = useState<MenuItem | null>(null);
-  const [adding, setAdding] = useState(false);
+  const [adding, setAdding] = useState<null | { section?: string; category?: string }>(null);
 
   // Clone before editing so we never mutate the list-state object in place
-  const startEdit = (it: MenuItem) => { setAdding(false); setEdit({ ...it }); };
+  const startEdit = (it: MenuItem) => { setAdding(null); setEdit({ ...it }); };
+  // Quick-add a new item with section/category prefilled from the row clicked
+  const startAdding = (preset?: { section?: string; category?: string }) => { setEdit(null); setAdding(preset ?? {}); };
 
   const load = () => fetch(`${API_BASE}/menu`).then(r => r.json()).then(setItems);
   useEffect(() => { load(); }, []);
@@ -549,7 +604,7 @@ function MenuCmsTab() {
     } else {
       await adminFetch(`${API_BASE}/menu`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(item) });
     }
-    setEdit(null); setAdding(false); load();
+    setEdit(null); setAdding(null); load();
   };
 
   const del = async (id: number) => {
@@ -596,30 +651,41 @@ function MenuCmsTab() {
     await bulkPatch(items.filter(i => i.section === section && i.category === oldCat), { category: next }, "Переименование категории");
   };
 
-  const editing = edit || (adding ? { id: 0, section: allSections[0] || "Кальяны", category: "", name: "", description: "", price: "", sortOrder: 0, isActive: 1 } as MenuItem : null);
+  const editing = edit || (adding ? {
+    id: 0,
+    section: adding.section ?? allSections[0] ?? "Кальяны",
+    category: adding.category ?? "",
+    name: "", description: "", price: "", sortOrder: 0, isActive: 1,
+  } as MenuItem : null);
   const fieldClass = "w-full bg-neutral-900 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:border-lime";
 
   return (
     <div>
       <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
         <h2 className="text-white font-bold uppercase tracking-widest text-sm">Меню — {items.length} позиц.</h2>
-        <button onClick={() => { setAdding(true); setEdit(null); }} className="px-4 py-2 bg-lime text-black text-xs uppercase tracking-widest font-bold hover:bg-lime/80">+ Добавить</button>
+        <button onClick={() => startAdding()} className="px-4 py-2 bg-lime text-black text-xs uppercase tracking-widest font-bold hover:bg-lime/80">+ Новая позиция</button>
       </div>
 
       {/* Hierarchical view: section → category → items, with bulk rename */}
       {Object.entries(categoriesBySection).sort(([a],[b]) => a.localeCompare(b)).map(([section, cats]) => (
         <div key={section} className="mb-8 border border-white/5 p-4">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <h3 className="text-lime text-sm uppercase tracking-widest">{section}</h3>
-            <button onClick={() => renameSection(section)} className="text-[10px] text-gray-500 hover:text-lime border border-white/10 px-2 py-1 uppercase tracking-widest">Переименовать секцию</button>
+            <div className="flex gap-2 flex-wrap">
+              <button onClick={() => startAdding({ section })} className="text-[10px] bg-lime/10 text-lime border border-lime/40 hover:bg-lime/20 px-3 py-1 uppercase tracking-widest font-bold">+ В эту секцию</button>
+              <button onClick={() => renameSection(section)} className="text-[10px] text-gray-500 hover:text-lime border border-white/10 px-2 py-1 uppercase tracking-widest">Переименовать секцию</button>
+            </div>
           </div>
           {Array.from(cats).sort().map(cat => (
             <div key={cat} className="mb-4">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
                 <h4 className="text-white/70 text-xs uppercase tracking-widest">{cat || "(без категории)"}</h4>
-                {cat && (
-                  <button onClick={() => renameCategory(section, cat)} className="text-[10px] text-gray-600 hover:text-lime px-2">Переименовать</button>
-                )}
+                <div className="flex gap-2">
+                  <button onClick={() => startAdding({ section, category: cat })} className="text-[10px] bg-lime/10 text-lime border border-lime/30 hover:bg-lime/20 px-2 py-1 uppercase tracking-widest font-bold">+ Позиция</button>
+                  {cat && (
+                    <button onClick={() => renameCategory(section, cat)} className="text-[10px] text-gray-600 hover:text-lime px-2">Переименовать</button>
+                  )}
+                </div>
               </div>
               <div className="space-y-1">
                 {items.filter(i => i.section === section && i.category === cat).map(it => (
@@ -646,7 +712,7 @@ function MenuCmsTab() {
       )}
 
       {editing && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => { setEdit(null); setAdding(false); }}>
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => { setEdit(null); setAdding(null); }}>
           <div className="bg-neutral-950 border border-white/10 p-6 max-w-lg w-full space-y-3" onClick={e => e.stopPropagation()}>
             <h3 className="text-white font-bold uppercase tracking-widest text-sm mb-4">{editing.id ? "Редактировать" : "Новая позиция"}</h3>
             <div className="grid grid-cols-2 gap-3">
@@ -686,7 +752,7 @@ function MenuCmsTab() {
               <button onClick={() => save(editing)} className="flex-1 bg-lime text-black font-bold uppercase tracking-widest py-2 text-xs hover:bg-lime/80">
                 Сохранить
               </button>
-              <button onClick={() => { setEdit(null); setAdding(false); }} className="px-4 py-2 border border-white/10 text-gray-400 text-xs uppercase tracking-widest hover:bg-white/5">
+              <button onClick={() => { setEdit(null); setAdding(null); }} className="px-4 py-2 border border-white/10 text-gray-400 text-xs uppercase tracking-widest hover:bg-white/5">
                 Отмена
               </button>
             </div>

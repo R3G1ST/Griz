@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "wouter";
 import { QRCodeSVG } from "qrcode.react";
 import { motion } from "framer-motion";
-import logo from "@/assets/images/logo.jpeg";
+import logoDefault from "@/assets/images/logo.jpeg";
+import { useSiteSettings, imgSrc } from "@/hooks/useSiteSettings";
 
 const BASE_URL = import.meta.env.BASE_URL ?? "/";
 const API = (p: string) => `${BASE_URL.endsWith("/") ? BASE_URL.slice(0, -1) : BASE_URL}${p}`;
@@ -56,6 +57,8 @@ function ProgressBar({ visits, tier }: { visits: number; tier: typeof TIERS[0] }
 }
 
 export default function LoyaltyCard() {
+  const { images } = useSiteSettings();
+  const logo = imgSrc(images, "logo", logoDefault);
   const params = useParams<{ token: string }>();
   const token = params.token;
   const [card, setCard] = useState<CardData | null>(null);
