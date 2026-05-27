@@ -55,6 +55,30 @@ async function send(chatId: number | string, text: string, extra: object = {}) {
   return tg("sendMessage", { chat_id: chatId, text, parse_mode: "HTML", ...extra });
 }
 
+async function sendPhotoFile(chatId: number | string, filePath: string, caption: string, extra: Record<string, unknown> = {}) {
+  const token = LOYALTY_TOKEN();
+  if (!token) return null;
+  try {
+    const { readFile } = await import("node:fs/promises");
+    const path = await import("node:path");
+    const abs = path.resolve(process.cwd(), filePath);
+    const buf = await readFile(abs);
+    const form = new FormData();
+    form.append("chat_id", String(chatId));
+    form.append("caption", caption);
+    form.append("parse_mode", "HTML");
+    for (const [k, v] of Object.entries(extra)) {
+      form.append(k, typeof v === "string" ? v : JSON.stringify(v));
+    }
+    form.append("photo", new Blob([buf], { type: "image/jpeg" }), path.basename(abs));
+    const r = await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, { method: "POST", body: form });
+    return await r.json();
+  } catch (e) {
+    console.warn("[loyalty-bot] sendPhotoFile failed, falling back to text:", e);
+    return send(chatId, caption, extra);
+  }
+}
+
 async function editMessage(chatId: number | string, messageId: number, text: string, extra: object = {}) {
   return tg("editMessageText", { chat_id: chatId, message_id: messageId, text, parse_mode: "HTML", ...extra });
 }
@@ -240,19 +264,20 @@ async function handleStart(chatId: number, userId: number, firstName: string, ar
       { reply_markup: markup });
   } else {
     sessions.set(userId, { state: "awaiting_phone" });
-    await send(chatId,
+    const caption =
       `🐻 <b>Добро пожаловать в ГРИЗЛИ Hookah Lounge!</b>\n\n` +
       `Программа лояльности даёт вам:\n` +
       `🥉 Бронза — 3% баллами с каждого визита\n` +
       `🥈 Серебро — 5% баллами + скидка 3%\n` +
       `🥇 Золото — 7% баллами + скидка 7%\n` +
       `💎 VIP — 12% баллами + скидка 12%\n\n` +
-      `Введите ваш номер телефона для регистрации:`,
-      { reply_markup: {
+      `Введите ваш номер телефона для регистрации:`;
+    await sendPhotoFile(chatId, "assets/loyalty-welcome.jpg", caption, {
+      reply_markup: {
         keyboard: [[{ text: "📱 Поделиться номером", request_contact: true }]],
         resize_keyboard: true, one_time_keyboard: true,
-      }}
-    );
+      },
+    });
   }
 }
 
