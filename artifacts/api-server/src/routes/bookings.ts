@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { db, insertBookingSchema, bookingsTable } from "@workspace/db";
+import { db, insertBookingSchema, bookingsTable, loyaltyCardsTable } from "@workspace/db";
 import { eq, and, sql } from "drizzle-orm";
 import { z } from "zod";
 
@@ -80,60 +80,171 @@ export async function registerWebhook(baseUrl: string) {
   }
 }
 
-// Reminder scheduler — runs every minute, sends reminder 60 min before booking
+function guestWord(n: number): string {
+  return n === 1 ? "гость" : n < 5 ? "гостя" : "гостей";
+}
+
+// Find guest's loyalty Telegram chat by phone (digits-only match).
+async function findGuestTelegramId(phone: string): Promise<number | null> {
+  const digits = phone.replace(/\D/g, "");
+  if (!digits) return null;
+  const rows = await db.execute(sql`
+    SELECT telegram_id FROM ${loyaltyCardsTable}
+    WHERE REGEXP_REPLACE(phone, '[^0-9]', '', 'g') = ${digits}
+      AND telegram_id IS NOT NULL
+    LIMIT 1
+  `);
+  const tg = (rows?.rows?.[0] as { telegram_id: number | string } | undefined)?.telegram_id;
+  return tg ? Number(tg) : null;
+}
+
+// Format the booking date as "27 мая (вт)" for the guest message.
+function formatRu(dateStr: string): string {
+  const d = new Date(dateStr + "T00:00:00");
+  if (isNaN(d.getTime())) return dateStr;
+  const months = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+  const wdays  = ["вс","пн","вт","ср","чт","пт","сб"];
+  return `${d.getDate()} ${months[d.getMonth()]} (${wdays[d.getDay()]})`;
+}
+
+async function sendGuestReminder(b: { id: number; name: string; date: string; time: string; guests: number; phone: string }, kind: "day" | "hour") {
+  const tgId = await findGuestTelegramId(b.phone);
+  if (!tgId) return; // Guest is not in the loyalty bot — skip silently.
+  const header = kind === "day"
+    ? `🐻 *ГРИЗЛИ — напоминание о брони*\n\nЖдём вас завтра!`
+    : `🐻 *ГРИЗЛИ — через час ждём вас!*`;
+  const text =
+    `${header}\n\n` +
+    `📅 ${formatRu(b.date)} в *${b.time}*\n` +
+    `👥 ${b.guests} ${guestWord(b.guests)}\n` +
+    `📍 Тюмень, ул. Новосёлов, 92\n\n` +
+    (kind === "hour"
+      ? `Если планы изменились — позвоните +7 (916) 328-38-91.`
+      : `До встречи! Если нужно перенести — позвоните +7 (916) 328-38-91.`);
+  await tgApi("sendMessage", { chat_id: tgId, text, parse_mode: "Markdown" });
+}
+
+async function sendAdminReminder(b: { id: number; name: string; phone: string; date: string; time: string; guests: number }, kind: "day" | "hour") {
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  if (!chatId || !process.env.TELEGRAM_BOT_TOKEN) return;
+  const header = kind === "day"
+    ? `📅 *Напоминание — бронь завтра*`
+    : `⏰ *Напоминание — через час бронь!*`;
+  await tgApi("sendMessage", {
+    chat_id: chatId,
+    text:
+      `${header}\n\n` +
+      `👤 ${b.name}\n` +
+      `📞 ${b.phone}\n` +
+      `📅 ${b.date} в ${b.time}\n` +
+      `👥 ${b.guests} ${guestWord(b.guests)}\n` +
+      `🆔 Заявка #${b.id}`,
+    parse_mode: "Markdown",
+  });
+}
+
+// Booking times are stored as local Tyumen wall-clock (UTC+5, no DST).
+// Build a UTC instant from the stored strings so window math is server-TZ-agnostic.
+const TYUMEN_OFFSET_MIN = 5 * 60;
+function bookingInstant(b: { date: string; time: string }): number {
+  // `${date}T${time}:00Z` gives UTC instant for that wall-clock time; subtract Tyumen offset.
+  const asUtc = Date.parse(`${b.date}T${b.time}:00Z`);
+  if (isNaN(asUtc)) return NaN;
+  return asUtc - TYUMEN_OFFSET_MIN * 60_000;
+}
+
+function inWindow(b: { date: string; time: string }, minMin: number, maxMin: number): boolean {
+  const start = bookingInstant(b);
+  if (isNaN(start)) return false;
+  const diffMin = (start - Date.now()) / 60_000;
+  return diffMin >= minMin && diffMin <= maxMin;
+}
+
+// Atomically claim a reminder slot. Returns true only if THIS call flipped the flag.
+async function claimReminder(bookingId: number, kind: "day" | "hour"): Promise<boolean> {
+  const column = kind === "day" ? sql`reminder_day_sent` : sql`reminder_sent`;
+  const rows = await db.execute(sql`
+    UPDATE bookings
+    SET ${column} = true
+    WHERE id = ${bookingId} AND ${column} = false
+    RETURNING id
+  `);
+  return (rows?.rows?.length ?? 0) > 0;
+}
+
+// Roll back the claim if delivery failed entirely — try again next tick.
+async function releaseReminder(bookingId: number, kind: "day" | "hour") {
+  const column = kind === "day" ? sql`reminder_day_sent` : sql`reminder_sent`;
+  await db.execute(sql`UPDATE bookings SET ${column} = false WHERE id = ${bookingId}`);
+}
+
+// Reminder scheduler — runs every minute. Sends:
+//   • 24h-before reminder (window 23h55m–24h05m) — to admin + guest (if in loyalty bot)
+//   • 1h-before  reminder (window 55–65 min)     — to admin + guest (if in loyalty bot)
+let reminderRunning = false;
+let warnedNoToken = false;
+
 export function startReminderScheduler() {
   setInterval(async () => {
+    if (reminderRunning) return; // Skip overlapping tick — prevents duplicate sends.
+    reminderRunning = true;
     try {
-      const now = new Date();
-      // Target window: bookings starting in 55–65 minutes
-      const lo = new Date(now.getTime() + 55 * 60 * 1000);
-      const hi = new Date(now.getTime() + 65 * 60 * 1000);
+      if (!process.env.TELEGRAM_BOT_TOKEN || !process.env.TELEGRAM_CHAT_ID) {
+        if (!warnedNoToken) {
+          console.warn("[Reminder] TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID missing — reminders disabled");
+          warnedNoToken = true;
+        }
+        return;
+      }
+      warnedNoToken = false;
 
-      const loDate = lo.toISOString().slice(0, 10);
-      const hiDate = hi.toISOString().slice(0, 10);
-      const loTime = lo.toTimeString().slice(0, 5);
-      const hiTime = hi.toTimeString().slice(0, 5);
-
-      const upcoming = await db
+      const confirmed = await db
         .select()
         .from(bookingsTable)
-        .where(
-          and(
-            eq(bookingsTable.reminderSent, false),
-            eq(bookingsTable.status, "confirmed"),
-          )
-        );
+        .where(eq(bookingsTable.status, "confirmed"));
 
-      for (const b of upcoming) {
-        if (b.date < loDate || b.date > hiDate) continue;
-        if (b.date === loDate && b.time < loTime) continue;
-        if (b.date === hiDate && b.time > hiTime) continue;
+      for (const b of confirmed) {
+        for (const kind of ["day", "hour"] as const) {
+          const alreadySent = kind === "day" ? b.reminderDaySent : b.reminderSent;
+          if (alreadySent) continue;
+          const windowOk = kind === "day"
+            ? inWindow(b, 23 * 60 + 55, 24 * 60 + 5)
+            : inWindow(b, 55, 65);
+          if (!windowOk) continue;
 
-        const chatId = process.env.TELEGRAM_CHAT_ID;
-        if (chatId && process.env.TELEGRAM_BOT_TOKEN) {
-          const guestWord = b.guests === 1 ? "гость" : b.guests < 5 ? "гостя" : "гостей";
-          await tgApi("sendMessage", {
-            chat_id: chatId,
-            text:
-              `⏰ *Напоминание — через час бронь!*\n\n` +
-              `👤 ${b.name}\n` +
-              `📞 ${b.phone}\n` +
-              `📅 ${b.date} в ${b.time}\n` +
-              `👥 ${b.guests} ${guestWord}\n` +
-              `🆔 Заявка #${b.id}`,
-            parse_mode: "Markdown",
-          });
+          // Atomic claim — only one tick (and only one process) wins.
+          const claimed = await claimReminder(b.id, kind);
+          if (!claimed) continue;
+
+          let adminOk = false;
+          let guestOk = true; // Default true — absence of guest TG card is OK.
+          try {
+            await sendAdminReminder(b, kind);
+            adminOk = true;
+          } catch (e) {
+            console.error(`[Reminder] admin send failed (booking #${b.id}, ${kind}):`, e);
+          }
+          try {
+            await sendGuestReminder(b, kind);
+          } catch (e) {
+            guestOk = false;
+            console.error(`[Reminder] guest send failed (booking #${b.id}, ${kind}):`, e);
+          }
+
+          // If the primary (admin) channel failed, release so we retry next tick.
+          // Guest DM failure alone doesn't trigger retry (avoid spamming the admin).
+          if (!adminOk && !guestOk) {
+            await releaseReminder(b.id, kind);
+          }
         }
-
-        await db.update(bookingsTable)
-          .set({ reminderSent: true })
-          .where(eq(bookingsTable.id, b.id));
       }
     } catch (e) {
       console.error("[Reminder] error:", e);
+    } finally {
+      reminderRunning = false;
     }
   }, 60_000);
-  console.log("[Reminder] scheduler started");
+  console.log("[Reminder] scheduler started (24h + 1h windows, Tyumen UTC+5, atomic claim)");
 }
 
 // Telegram webhook handler

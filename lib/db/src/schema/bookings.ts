@@ -12,6 +12,7 @@ export const bookingsTable = pgTable("bookings", {
   comment: text("comment"),
   status: text("status").notNull().default("pending"),
   reminderSent: boolean("reminder_sent").notNull().default(false),
+  reminderDaySent: boolean("reminder_day_sent").notNull().default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -19,6 +20,7 @@ export const insertBookingSchema = createInsertSchema(bookingsTable).omit({
   id: true,
   status: true,
   reminderSent: true,
+  reminderDaySent: true,
   createdAt: true,
 });
 
