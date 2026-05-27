@@ -1,6 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import { registerWebhook, startReminderScheduler } from "./routes/bookings";
+import { registerLoyaltyWebhook } from "./loyalty-bot";
 
 const rawPort = process.env["PORT"];
 if (!rawPort) throw new Error("PORT environment variable is required but was not provided.");
@@ -14,5 +15,9 @@ app.listen(port, (err) => {
   startReminderScheduler();
 
   const domain = process.env.REPLIT_DEV_DOMAIN;
-  if (domain) registerWebhook(`https://${domain}`).catch(() => {});
+  if (domain) {
+    const base = `https://${domain}`;
+    registerWebhook(base).catch(() => {});
+    registerLoyaltyWebhook(base).catch(() => {});
+  }
 });

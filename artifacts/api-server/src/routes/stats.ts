@@ -6,7 +6,7 @@ const router: IRouter = Router();
 
 router.get("/stats", async (_req: Request, res: Response) => {
   try {
-    const [totals] = await db.execute(sql`
+    const totals  = await db.execute(sql`
       SELECT
         COUNT(*)::int AS total,
         COUNT(*) FILTER (WHERE status = 'pending')::int AS pending,
@@ -48,10 +48,10 @@ router.get("/stats", async (_req: Request, res: Response) => {
     `);
 
     res.json({
-      totals: totals.rows[0],
-      byDay: byDay.rows,
-      byHour: byHour.rows,
-      byGuests: byGuests.rows,
+      totals:   (totals   as any).rows[0] ?? { total: 0, pending: 0, confirmed: 0, cancelled: 0, total_guests: 0 },
+      byDay:    (byDay    as any).rows ?? [],
+      byHour:   (byHour   as any).rows ?? [],
+      byGuests: (byGuests as any).rows ?? [],
     });
   } catch (e) {
     console.error(e);
