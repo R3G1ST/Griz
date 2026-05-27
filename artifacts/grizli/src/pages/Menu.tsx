@@ -1,5 +1,4 @@
 import { motion } from "framer-motion";
-import { QRCodeSVG } from "qrcode.react";
 import Navbar from "@/components/Navbar";
 
 const fadeIn = {
@@ -105,9 +104,6 @@ function MenuSection({ title, groups }: { title: string; groups: typeof hookahs 
 
 export default function Menu() {
   const tableNumber = getTableNumber();
-  const menuUrl = typeof window !== "undefined"
-    ? `${window.location.origin}${window.location.pathname}`
-    : "";
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -140,25 +136,6 @@ export default function Menu() {
 
         <MenuSection title="Кальяны" groups={hookahs} />
         <MenuSection title="Напитки" groups={drinks} />
-
-        {/* QR section — for printing / sharing */}
-        <motion.div
-          initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeIn}
-          className="mt-16 border border-white/10 p-8 flex flex-col md:flex-row items-center gap-8"
-        >
-          <div className="bg-white p-4 rounded">
-            <QRCodeSVG value={menuUrl || "https://grizli.ru/menu"} size={120} />
-          </div>
-          <div>
-            <p className="text-white font-serif text-xl mb-2">QR-код меню</p>
-            <p className="text-muted-foreground font-light text-sm">
-              Отсканируйте, чтобы открыть меню на своём телефоне{tableNumber ? ` (Стол №${tableNumber})` : ""}.
-            </p>
-            {menuUrl && (
-              <p className="text-primary/60 text-xs mt-2 break-all">{menuUrl}</p>
-            )}
-          </div>
-        </motion.div>
 
         <motion.div
           initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeIn}
