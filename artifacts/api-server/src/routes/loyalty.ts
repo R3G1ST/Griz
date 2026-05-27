@@ -33,6 +33,20 @@ router.get("/loyalty/card/:token", async (req: Request, res: Response) => {
   res.json({ ...card, found: true, tier_info: { name: tier.name, emoji: tier.emoji, discount: tier.discount, bonus_rate: tier.bonusRate, nextAt: tier.nextAt } });
 });
 
+// ── Card visit history (for Mini App) ─────────────────────────────────────────
+router.get("/loyalty/card/:token/history", async (req: Request, res: Response) => {
+  const { token } = req.params;
+  const limitRaw = Number(req.query.limit ?? 20);
+  const limit = Number.isFinite(limitRaw) && limitRaw > 0 && limitRaw <= 100 ? Math.floor(limitRaw) : 20;
+  const [card] = await db.select({ id: loyaltyCardsTable.id }).from(loyaltyCardsTable)
+    .where(eq(loyaltyCardsTable.token, token)).catch(() => []);
+  if (!card) { res.status(404).json({ error: "Card not found" }); return; }
+  const visits = await db.select().from(loyaltyVisitsTable)
+    .where(eq(loyaltyVisitsTable.cardId, card.id))
+    .orderBy(sql`created_at DESC`).limit(limit);
+  res.json({ visits });
+});
+
 // ── Webhook from Telegram ─────────────────────────────────────────────────────
 router.post("/loyalty/tg", async (req: Request, res: Response) => {
   res.json({ ok: true }); // respond fast

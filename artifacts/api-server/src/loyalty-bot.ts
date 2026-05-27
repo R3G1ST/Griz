@@ -153,7 +153,8 @@ function renderCard(card: LoyaltyCard): { text: string; markup: object } {
   const url = cardUrl(card.token);
   const markup = {
     inline_keyboard: [
-      ...(url ? [[{ text: "📱 Показать кассиру", url }]] : []),
+      // web_app button opens the page as a Telegram Mini App (overlay) instead of external browser
+      ...(url ? [[{ text: "🪪 Открыть мою карту", web_app: { url } }]] : []),
       [
         { text: "🎁 Баллы",    callback_data: "balance" },
         { text: "📊 История",  callback_data: "history" },

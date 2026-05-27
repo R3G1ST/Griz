@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "wouter";
 import { QRCodeSVG } from "qrcode.react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import logoDefault from "@/assets/images/logo.jpeg";
 import { useSiteSettings, imgSrc } from "@/hooks/useSiteSettings";
 
@@ -14,6 +14,53 @@ type CardData = {
   lastVisitAt: string | null;
   tier_info: { name: string; emoji: string; discount: number; bonus_rate: number; nextAt: number | null };
 };
+
+type Visit = {
+  id: number; cardId: number; amountSpent: number; bonusEarned: number;
+  bonusUsed: number; note: string | null; createdAt: string;
+};
+
+// ── Telegram Mini App helpers ─────────────────────────────────────────────────
+type TgWebApp = {
+  ready: () => void;
+  expand: () => void;
+  close: () => void;
+  initData: string;
+  initDataUnsafe?: { user?: { first_name?: string; id?: number } };
+  colorScheme: "light" | "dark";
+  setHeaderColor: (c: string) => void;
+  setBackgroundColor: (c: string) => void;
+  HapticFeedback?: { impactOccurred: (s: "light" | "medium" | "heavy") => void; notificationOccurred: (s: "success" | "warning" | "error") => void };
+  MainButton?: { setText: (t: string) => void; show: () => void; hide: () => void; onClick: (cb: () => void) => void };
+};
+declare global { interface Window { Telegram?: { WebApp?: TgWebApp } } }
+
+function useTelegramWebApp() {
+  const [tg, setTg] = useState<TgWebApp | null>(null);
+  useEffect(() => {
+    // Inject Telegram WebApp SDK script (no-op outside Telegram, but exposes window.Telegram.WebApp inside)
+    const existing = document.querySelector<HTMLScriptElement>('script[src="https://telegram.org/js/telegram-web-app.js"]');
+    const initTg = () => {
+      const app = window.Telegram?.WebApp;
+      if (!app) return;
+      try {
+        app.ready();
+        app.expand();
+        app.setHeaderColor("#000000");
+        app.setBackgroundColor("#000000");
+      } catch { /* SDK unavailable outside Telegram */ }
+      // Only treat as "inside Telegram" if initData is present (real session)
+      if (app.initData && app.initData.length > 0) setTg(app);
+    };
+    if (existing) { initTg(); return; }
+    const s = document.createElement("script");
+    s.src = "https://telegram.org/js/telegram-web-app.js";
+    s.async = true;
+    s.onload = initTg;
+    document.head.appendChild(s);
+  }, []);
+  return tg;
+}
 
 const TIERS = [
   { key: "bronze", label: "Бронзовый",  emoji: "🥉", minVisits: 0,  nextAt: 5,    color: "#CD7F32" },
@@ -61,30 +108,62 @@ export default function LoyaltyCard() {
   const logo = imgSrc(images, "logo", logoDefault);
   const params = useParams<{ token: string }>();
   const token = params.token;
+  const tg = useTelegramWebApp();
+  const insideTelegram = tg !== null;
   const [card, setCard] = useState<CardData | null>(null);
+  const [visits, setVisits] = useState<Visit[] | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [refreshed, setRefreshed] = useState(false);
 
-  const load = async () => {
+  const load = async (signal?: AbortSignal) => {
     try {
-      const r = await fetch(API(`/api/loyalty/card/${token}`));
+      const r = await fetch(API(`/api/loyalty/card/${token}`), { signal });
       if (!r.ok) throw new Error();
       const data = await r.json();
       setCard(data);
       setError(false);
-    } catch {
+    } catch (e) {
+      if ((e as Error).name === "AbortError") return;
       setError(true);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { load(); }, [token]);
+  useEffect(() => {
+    const ctrl = new AbortController();
+    load(ctrl.signal);
+    return () => ctrl.abort();
+  }, [token]);
+
+  const loadHistory = async () => {
+    if (visits) return; // cache
+    setHistoryLoading(true);
+    try {
+      const r = await fetch(API(`/api/loyalty/card/${token}/history?limit=20`));
+      if (!r.ok) throw new Error();
+      const data = await r.json();
+      setVisits(data.visits ?? []);
+    } catch { setVisits([]); }
+    finally { setHistoryLoading(false); }
+  };
+
+  const toggleHistory = () => {
+    const next = !historyOpen;
+    setHistoryOpen(next);
+    if (next) loadHistory();
+    tg?.HapticFeedback?.impactOccurred("light");
+  };
 
   const refresh = async () => {
     await load();
+    setVisits(null); // invalidate history cache
+    if (historyOpen) loadHistory();
     setRefreshed(true);
+    tg?.HapticFeedback?.notificationOccurred("success");
     setTimeout(() => setRefreshed(false), 2000);
   };
 
@@ -188,6 +267,67 @@ export default function LoyaltyCard() {
         </div>
       </motion.div>
 
+      {/* Visit history (collapsible) */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.35 }}
+        className="mt-6 w-full max-w-sm"
+      >
+        <button
+          onClick={toggleHistory}
+          aria-expanded={historyOpen}
+          className="w-full flex items-center justify-between px-5 py-3 rounded-xl bg-white/[0.03] border border-white/10 hover:border-[#C5FF00]/30 transition-all"
+        >
+          <span className="text-white/70 text-sm font-medium tracking-wide">📊 История визитов</span>
+          <span className="text-[#C5FF00] text-lg" style={{ transform: historyOpen ? "rotate(180deg)" : "none", transition: "transform .25s" }}>⌄</span>
+        </button>
+        <AnimatePresence initial={false}>
+          {historyOpen && (
+            <motion.div
+              key="history"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.25 }}
+              className="overflow-hidden"
+            >
+              <div className="mt-2 rounded-xl bg-white/[0.02] border border-white/5 divide-y divide-white/5">
+                {historyLoading && (
+                  <div className="py-6 text-center text-white/30 text-sm">Загрузка…</div>
+                )}
+                {!historyLoading && visits && visits.length === 0 && (
+                  <div className="py-6 text-center text-white/30 text-sm">Здесь появится история ваших визитов</div>
+                )}
+                {!historyLoading && visits && visits.map(v => {
+                  const date = new Date(v.createdAt);
+                  const dateStr = date.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+                  const timeStr = date.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+                  const isRedeem = v.bonusUsed > 0;
+                  return (
+                    <div key={v.id} className="flex items-center justify-between px-4 py-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-white/80 text-sm">
+                          {isRedeem ? "Списание баллов" : v.note || "Визит"}
+                        </div>
+                        <div className="text-white/30 text-xs mt-0.5">{dateStr} · {timeStr}{v.amountSpent > 0 && ` · ${v.amountSpent.toLocaleString("ru-RU")} ₽`}</div>
+                      </div>
+                      {isRedeem ? (
+                        <div className="text-[#FF6B6B] text-sm font-semibold tabular-nums">−{v.bonusUsed}</div>
+                      ) : v.bonusEarned > 0 ? (
+                        <div className="text-[#C5FF00] text-sm font-semibold tabular-nums">+{v.bonusEarned}</div>
+                      ) : (
+                        <div className="text-white/30 text-sm">—</div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+
       {/* Instructions */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -199,18 +339,33 @@ export default function LoyaltyCard() {
         <p className="text-white/20 text-xs">или назовите номер телефона</p>
       </motion.div>
 
-      {/* Add to home screen hint */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.8 }}
-        className="mt-8 max-w-sm w-full border border-white/5 rounded-xl p-4 text-center"
-      >
-        <p className="text-white/50 text-xs leading-relaxed">
-          📱 Добавьте на экран телефона:<br/>
-          <span className="text-white/30">Safari → Поделиться → На экран «Домой»</span>
-        </p>
-      </motion.div>
+      {/* Add to home screen hint — only outside Telegram */}
+      {!insideTelegram && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8 }}
+          className="mt-8 max-w-sm w-full border border-white/5 rounded-xl p-4 text-center"
+        >
+          <p className="text-white/50 text-xs leading-relaxed">
+            📱 Добавьте на экран телефона:<br/>
+            <span className="text-white/30">Safari → Поделиться → На экран «Домой»</span>
+          </p>
+        </motion.div>
+      )}
+
+      {/* Mini-app close button */}
+      {insideTelegram && (
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+          onClick={() => tg?.close()}
+          className="mt-6 text-xs px-4 py-2 rounded-full border border-white/10 text-white/40 hover:text-white hover:border-white/30 transition-all"
+        >
+          Закрыть
+        </motion.button>
+      )}
     </div>
   );
 }
