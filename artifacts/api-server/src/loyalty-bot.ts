@@ -46,11 +46,40 @@ async function send(chatId: number | string, text: string, extra: object = {}) {
   return tg("sendMessage", { chat_id: chatId, text, parse_mode: "HTML", ...extra });
 }
 
+async function editMessage(chatId: number | string, messageId: number, text: string, extra: object = {}) {
+  return tg("editMessageText", { chat_id: chatId, message_id: messageId, text, parse_mode: "HTML", ...extra });
+}
+
 // ── Card URL helper ───────────────────────────────────────────────────────────
 function cardUrl(token: string | null | undefined): string | null {
   const domain = process.env.REPLIT_DEV_DOMAIN;
   if (!domain || !token) return null;
   return `https://${domain}/loyalty/${token}`;
+}
+
+// ── Staff notification ────────────────────────────────────────────────────────
+async function notifyStaff(guestName: string, tableNum: string, staffType: string, request: string) {
+  const adminChatId = process.env.TELEGRAM_CHAT_ID;
+  if (!adminChatId) return;
+
+  const staffEmoji = staffType === "hookah" ? "💨" : "🍽️";
+  const staffName  = staffType === "hookah" ? "Кальянный мастер" : "Официант";
+
+  // Use booking bot token to notify admin chat (same group)
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  if (!botToken) return;
+
+  const text =
+    `🔔 <b>ВЫЗОВ ПЕРСОНАЛА</b>\n\n` +
+    `${staffEmoji} <b>${staffName}</b>\n` +
+    `🪑 Стол: <b>№${tableNum}</b>\n` +
+    `📋 Запрос: <b>${request}</b>\n` +
+    `👤 Гость: ${guestName}`;
+
+  await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: adminChatId, text, parse_mode: "HTML" }),
+  });
 }
 
 // ── Card renderer ─────────────────────────────────────────────────────────────
@@ -91,22 +120,58 @@ function renderCard(card: LoyaltyCard): { text: string; markup: object } {
   const url = cardUrl(card.token);
   const markup = {
     inline_keyboard: [
-      // Row 1: show card to cashier (primary CTA)
       ...(url ? [[{ text: "📱 Показать кассиру", url }]] : []),
-      // Row 2: stats
       [
         { text: "🎁 Баллы",    callback_data: "balance" },
         { text: "📊 История",  callback_data: "history" },
       ],
-      // Row 3: utility
       [
-        { text: "🔄 Обновить",      callback_data: "card" },
-        { text: "🔗 Изм. номер",    callback_data: "changephone" },
+        { text: "🔔 Позвать персонал", callback_data: "call_staff" },
+      ],
+      [
+        { text: "🔄 Обновить",   callback_data: "card" },
+        { text: "🔗 Изм. номер", callback_data: "changephone" },
       ],
     ],
   };
 
   return { text, markup };
+}
+
+// ── Staff call menus ──────────────────────────────────────────────────────────
+function staffMainMenu() {
+  return {
+    inline_keyboard: [
+      [{ text: "💨 Кальянный мастер", callback_data: "call_hookah" }],
+      [{ text: "🍽️ Официант",          callback_data: "call_waiter" }],
+      [{ text: "← Назад",             callback_data: "card"       }],
+    ],
+  };
+}
+
+function hookahMenu() {
+  return {
+    inline_keyboard: [
+      [{ text: "🔥 Сменить уголь",    callback_data: "req:hookah:Сменить уголь"   }],
+      [{ text: "💨 Перебить кальян",  callback_data: "req:hookah:Перебить кальян" }],
+      [{ text: "🚫 Убрать кальян",    callback_data: "req:hookah:Убрать кальян"   }],
+      [{ text: "❓ Другое",            callback_data: "req:hookah:Другое"          }],
+      [{ text: "← Назад",             callback_data: "call_staff"                 }],
+    ],
+  };
+}
+
+function waiterMenu() {
+  return {
+    inline_keyboard: [
+      [{ text: "💳 Принести счёт",      callback_data: "req:waiter:Принести счёт"    }],
+      [{ text: "💧 Принести воду",       callback_data: "req:waiter:Принести воду"    }],
+      [{ text: "📋 Хочу сделать заказ",  callback_data: "req:waiter:Сделать заказ"    }],
+      [{ text: "🧹 Убрать со стола",     callback_data: "req:waiter:Убрать со стола"  }],
+      [{ text: "❓ Другое",               callback_data: "req:waiter:Другое"           }],
+      [{ text: "← Назад",                callback_data: "call_staff"                  }],
+    ],
+  };
 }
 
 // ── DB helpers ────────────────────────────────────────────────────────────────
@@ -138,10 +203,22 @@ async function updateTier(card: LoyaltyCard): Promise<LoyaltyCard> {
 }
 
 // ── Session state (in-memory) ─────────────────────────────────────────────────
-const sessions: Map<number, { state: string; data?: object }> = new Map();
+type SessionState =
+  | { state: "awaiting_phone" }
+  | { state: "awaiting_phone_change" }
+  | { state: "awaiting_table"; staffType: string; request: string };
+
+const sessions: Map<number, SessionState> = new Map();
 
 // ── Message handlers ──────────────────────────────────────────────────────────
-async function handleStart(chatId: number, userId: number, firstName: string) {
+async function handleStart(chatId: number, userId: number, firstName: string, args?: string) {
+  // Handle deep link: /start table5
+  if (args && args.startsWith("table")) {
+    const tableNum = args.replace("table", "");
+    sessions.set(userId, { state: "awaiting_table", staffType: "hookah", request: "_table_set" });
+    // Just store table hint in session data — but since we don't have complex session, just show card
+  }
+
   const card = await findCard(userId);
   if (card) {
     const { text, markup } = renderCard(card);
@@ -160,7 +237,7 @@ async function handleStart(chatId: number, userId: number, firstName: string) {
       { reply_markup: {
         keyboard: [[{ text: "📱 Поделиться номером", request_contact: true }]],
         resize_keyboard: true, one_time_keyboard: true,
-      } }
+      }}
     );
   }
 }
@@ -227,6 +304,68 @@ async function handleHistory(chatId: number, userId: number) {
   await send(chatId, `📊 <b>История визитов</b> (последние ${visits.length})\nВсего: <b>${card.visits}</b>\n\n${lines.join("\n\n")}`);
 }
 
+// ── Staff call handlers ───────────────────────────────────────────────────────
+async function handleCallStaff(chatId: number, userId: number, messageId?: number) {
+  const card = await findCard(userId);
+  if (!card) { await send(chatId, "Сначала зарегистрируйтесь: /start"); return; }
+
+  const text = `🔔 <b>Позвать персонал</b>\n\nКого вы хотите позвать?`;
+  if (messageId) {
+    await editMessage(chatId, messageId, text, { reply_markup: staffMainMenu() });
+  } else {
+    await send(chatId, text, { reply_markup: staffMainMenu() });
+  }
+}
+
+async function handleCallHookah(chatId: number, messageId?: number) {
+  const text = `💨 <b>Кальянный мастер</b>\n\nЧто вам нужно?`;
+  if (messageId) {
+    await editMessage(chatId, messageId, text, { reply_markup: hookahMenu() });
+  } else {
+    await send(chatId, text, { reply_markup: hookahMenu() });
+  }
+}
+
+async function handleCallWaiter(chatId: number, messageId?: number) {
+  const text = `🍽️ <b>Официант</b>\n\nЧто вам нужно?`;
+  if (messageId) {
+    await editMessage(chatId, messageId, text, { reply_markup: waiterMenu() });
+  } else {
+    await send(chatId, text, { reply_markup: waiterMenu() });
+  }
+}
+
+async function handleStaffRequest(chatId: number, userId: number, staffType: string, request: string, messageId?: number) {
+  sessions.set(userId, { state: "awaiting_table", staffType, request });
+  const staffEmoji = staffType === "hookah" ? "💨" : "🍽️";
+  const staffName  = staffType === "hookah" ? "Кальянный мастер" : "Официант";
+  const text = `${staffEmoji} <b>${staffName}</b> — ${request}\n\n🪑 На каком столе вы сидите?\nВведите номер стола:`;
+  if (messageId) {
+    await editMessage(chatId, messageId, text, { reply_markup: { inline_keyboard: [[{ text: "← Отмена", callback_data: staffType === "hookah" ? "call_hookah" : "call_waiter" }]] } });
+  } else {
+    await send(chatId, text, { reply_markup: { inline_keyboard: [[{ text: "← Отмена", callback_data: staffType === "hookah" ? "call_hookah" : "call_waiter" }]] } });
+  }
+}
+
+async function handleTableNumber(chatId: number, userId: number, tableNum: string, session: { staffType: string; request: string }) {
+  sessions.delete(userId);
+  const card = await findCard(userId);
+  const guestName = card?.name ?? "Гость";
+
+  const staffEmoji = session.staffType === "hookah" ? "💨" : "🍽️";
+  const staffName  = session.staffType === "hookah" ? "Кальянный мастер" : "Официант";
+
+  await notifyStaff(guestName, tableNum, session.staffType, session.request);
+
+  await send(chatId,
+    `✅ <b>Запрос отправлен!</b>\n\n` +
+    `${staffEmoji} ${staffName} скоро подойдёт к столу №<b>${tableNum}</b>.\n` +
+    `📋 Запрос: ${session.request}\n\n` +
+    `<i>Ожидайте, пожалуйста.</i>`,
+    { reply_markup: { inline_keyboard: [[{ text: "🔔 Ещё вызов", callback_data: "call_staff" }, { text: "🎴 Моя карта", callback_data: "card" }]] } }
+  );
+}
+
 // ── Admin commands ────────────────────────────────────────────────────────────
 const ADMIN_IDS = (process.env.LOYALTY_ADMIN_IDS ?? "").split(",").map(s => Number(s.trim())).filter(Boolean);
 
@@ -268,7 +407,6 @@ async function handleAddVisit(chatId: number, userId: number, args: string[]) {
   if (tierChanged) msg += `\n\n🎊 ПОВЫШЕНИЕ УРОВНЯ: ${tier.emoji} → ${newTierObj.emoji} ${newTierObj.name}!`;
   await send(chatId, msg);
 
-  // Notify customer
   if (updated.telegramId) {
     let notif = `🐻 <b>Визит зарегистрирован!</b>\n\n🔢 Визит #${newVisits}\n🎁 +${bonusEarned} баллов\n💰 Итого баллов: ${newBonus}`;
     if (tierChanged) notif += `\n\n🎊 Поздравляем! Вы достигли уровня <b>${newTierObj.emoji} ${newTierObj.name}</b>!\nНовые привилегии:\n📈 Бонус: ${newTierObj.bonusRate}%\n💸 Скидка: ${newTierObj.discount}%`;
@@ -352,7 +490,6 @@ async function handleLoyaltyStats(chatId: number, userId: number) {
   );
 }
 
-// ── Help ──────────────────────────────────────────────────────────────────────
 async function handleHelp(chatId: number, userId: number) {
   const adminPart = isAdmin(userId)
     ? `\n\n<b>Команды персонала:</b>\n` +
@@ -371,6 +508,7 @@ async function handleHelp(chatId: number, userId: number) {
     `/card — показать карту\n` +
     `/balance — баланс баллов\n` +
     `/history — история визитов\n` +
+    `/call — позвать персонал\n` +
     `/help — помощь` +
     adminPart
   );
@@ -385,9 +523,22 @@ export async function handleLoyaltyUpdate(update: any) {
       await tg("answerCallbackQuery", { callback_query_id: cq.id });
       const userId = cq.from.id;
       const chatId = cq.message?.chat?.id ?? userId;
+      const msgId  = cq.message?.message_id;
+
       if (cq.data === "card")        return handleCard(chatId, userId);
       if (cq.data === "balance")     return handleBalance(chatId, userId);
       if (cq.data === "history")     return handleHistory(chatId, userId);
+      if (cq.data === "call_staff")  return handleCallStaff(chatId, userId, msgId);
+      if (cq.data === "call_hookah") return handleCallHookah(chatId, msgId);
+      if (cq.data === "call_waiter") return handleCallWaiter(chatId, msgId);
+
+      // Staff request: "req:hookah:Сменить уголь" or "req:waiter:Принести счёт"
+      if (cq.data.startsWith("req:")) {
+        const [, staffType, ...reqParts] = cq.data.split(":");
+        const request = reqParts.join(":");
+        return handleStaffRequest(chatId, userId, staffType, request, msgId);
+      }
+
       if (cq.data === "changephone") {
         sessions.set(userId, { state: "awaiting_phone_change" });
         await send(chatId, "📱 Введите новый номер телефона:");
@@ -412,6 +563,18 @@ export async function handleLoyaltyUpdate(update: any) {
 
     // Check session state
     const session = sessions.get(userId);
+
+    if (session?.state === "awaiting_table") {
+      const tableNum = text.trim();
+      if (/^\d{1,3}$/.test(tableNum)) {
+        await handleTableNumber(chatId, userId, tableNum, session);
+        return;
+      } else {
+        await send(chatId, "⚠️ Введите номер стола цифрами, например: <b>5</b>");
+        return;
+      }
+    }
+
     if (session?.state === "awaiting_phone" || session?.state === "awaiting_phone_change") {
       const phone = text.trim();
       if (phone.match(/^[\d\s\+\-\(\)]{7,15}$/)) {
@@ -423,10 +586,11 @@ export async function handleLoyaltyUpdate(update: any) {
     // Commands
     const [cmd, ...args] = text.split(" ");
     switch (cmd) {
-      case "/start":         return handleStart(chatId, userId, firstName);
+      case "/start":         return handleStart(chatId, userId, firstName, args[0]);
       case "/card":          return handleCard(chatId, userId);
       case "/balance":       return handleBalance(chatId, userId);
       case "/history":       return handleHistory(chatId, userId);
+      case "/call":          return handleCallStaff(chatId, userId);
       case "/help":          return handleHelp(chatId, userId);
       case "/addvisit":      return handleAddVisit(chatId, userId, args);
       case "/newguest":      return handleNewGuest(chatId, userId, args);
@@ -447,12 +611,12 @@ export async function registerLoyaltyWebhook(baseUrl: string) {
   const webhookUrl = `${baseUrl}${LOYALTY_PATH}`;
   const res = await tg("setWebhook", { url: webhookUrl, drop_pending_updates: true });
   console.log("[loyalty-bot] Webhook:", JSON.stringify(res));
-  // Set bot commands for users
   await tg("setMyCommands", { commands: [
     { command: "start",   description: "Моя карта лояльности" },
     { command: "card",    description: "Показать карту" },
     { command: "balance", description: "Баланс баллов" },
     { command: "history", description: "История визитов" },
+    { command: "call",    description: "Позвать персонал" },
     { command: "help",    description: "Помощь" },
   ]});
 }

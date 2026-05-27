@@ -1,40 +1,27 @@
 import { motion } from "framer-motion";
-import { Link } from "wouter";
 import heroBg from "@/assets/images/hero-bg.png";
 import bearSkull from "@/assets/images/bear-skull.png";
 import cocktail from "@/assets/images/cocktail.png";
 import interior from "@/assets/images/interior.png";
-import logo from "@/assets/images/logo.jpeg";
+import Navbar from "@/components/Navbar";
 
 const photos = [
-  { src: heroBg,    label: "Основной зал",    desc: "Атмосфера вечернего Гризли" },
-  { src: interior,  label: "Интерьер",         desc: "Грофитти-арт и живой декор" },
-  { src: cocktail,  label: "Бар",              desc: "Авторские коктейли и напитки" },
-  { src: bearSkull, label: "Арт-объект",       desc: "Символ заведения" },
-  { src: heroBg,    label: "VIP-зона",         desc: "Приватные посадочные места" },
-  { src: interior,  label: "Кальянная зона",   desc: "Профессиональные кальяны" },
+  { src: heroBg,    label: "Основной зал",  desc: "Атмосфера вечернего Гризли" },
+  { src: interior,  label: "Интерьер",       desc: "Грофитти-арт и живой декор" },
+  { src: cocktail,  label: "Бар",            desc: "Авторские коктейли и напитки" },
+  { src: bearSkull, label: "Арт-объект",     desc: "Символ заведения" },
+  { src: heroBg,    label: "VIP-зона",       desc: "Приватные посадочные места" },
+  { src: interior,  label: "Кальянная зона", desc: "Профессиональные кальяны" },
 ];
 
 export default function Gallery() {
   return (
     <main className="min-h-screen bg-background text-foreground">
-      {/* Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-40 px-6 py-3 flex justify-between items-center bg-black/80 backdrop-blur border-b border-white/5">
-        <Link href="/">
-          <img src={logo} alt="ГРИЗЛИ" className="h-12 w-12 object-contain rounded-full cursor-pointer" />
-        </Link>
-        <div className="flex gap-8 text-sm font-medium tracking-widest uppercase text-white items-center">
-          <Link href="/" className="hover:text-primary transition-colors cursor-pointer">Главная</Link>
-          <Link href="/menu" className="hover:text-primary transition-colors cursor-pointer">Меню</Link>
-          <Link href="/card" className="hover:text-primary transition-colors cursor-pointer">Контакты</Link>
-        </div>
-      </nav>
+      <Navbar />
 
       <div className="pt-24 pb-20 px-6 max-w-7xl mx-auto">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7 }}
+          initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}
           className="mb-14"
         >
           <h1 className="text-6xl md:text-8xl font-serif uppercase text-white">Галерея</h1>
@@ -46,19 +33,14 @@ export default function Gallery() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {photos.map((photo, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
+            <motion.div key={i}
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: i * 0.08 }}
               className="group relative overflow-hidden cursor-pointer"
             >
               <div className="aspect-[4/3] overflow-hidden">
-                <img
-                  src={photo.src}
-                  alt={photo.label}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 brightness-75"
-                />
+                <img src={photo.src} alt={photo.label}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 brightness-75" />
               </div>
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-5">
                 <p className="text-primary text-xs uppercase tracking-widest mb-1">{photo.desc}</p>

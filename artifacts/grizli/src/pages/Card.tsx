@@ -76,7 +76,7 @@ export default function Card() {
           </div>
 
           {/* Book CTA */}
-          <a href={`${SITE_URL}/#booking`}
+          <a href={`${SITE_URL}/booking`}
             className="w-full bg-primary text-black text-center font-bold uppercase tracking-widest py-3 text-sm hover:bg-primary/80 transition-colors">
             Забронировать стол
           </a>

@@ -4,6 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
 } from "recharts";
+import { QRCodeSVG } from "qrcode.react";
 
 const API_BASE = "/api";
 const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD ?? "grizli2024";
@@ -218,9 +219,115 @@ function StatsTab() {
   );
 }
 
+// ── Tables QR tab ─────────────────────────────────────────────────────────────
+const SITE_DOMAIN = (() => {
+  // In admin, API calls go to /api (same origin via proxy), but we need the public site domain for QR
+  const host = window.location.host;
+  // The admin is at /admin/, grizli is at /
+  return `${window.location.protocol}//${host}`;
+})();
+
+function TablesTab() {
+  const [tableCount, setTableCount] = useState(10);
+  const [selected, setSelected] = useState<number | null>(null);
+
+  const menuUrl = (n: number) => `${SITE_DOMAIN}/menu?table=${n}`;
+
+  const downloadQR = (tableNum: number) => {
+    const svg = document.getElementById(`qr-table-${tableNum}`)?.querySelector("svg");
+    if (!svg) return;
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement("canvas");
+    canvas.width = 300; canvas.height = 340;
+    const ctx = canvas.getContext("2d")!;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, 300, 340);
+
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, 25, 20, 250, 250);
+      ctx.fillStyle = "#000000";
+      ctx.font = "bold 18px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(`ГРИЗЛИ — Стол №${tableNum}`, 150, 300);
+      ctx.font = "12px sans-serif";
+      ctx.fillStyle = "#666666";
+      ctx.fillText("Сканируйте для просмотра меню", 150, 325);
+      const link = document.createElement("a");
+      link.download = `qr-table-${tableNum}.png`;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    };
+    img.src = "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgData)));
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
+        <div>
+          <h2 className="text-white text-lg font-bold uppercase tracking-widest">QR-коды для столов</h2>
+          <p className="text-gray-500 text-sm mt-1">Гость сканирует — открывается меню с номером стола</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-gray-500 text-sm">Столов:</span>
+          <select value={tableCount} onChange={e => setTableCount(Number(e.target.value))}
+            className="bg-neutral-900 border border-white/10 text-white px-3 py-1.5 text-sm focus:outline-none focus:border-lime">
+            {[5,10,15,20,25,30].map(n => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        {Array.from({ length: tableCount }, (_, i) => i + 1).map(n => (
+          <div key={n}
+            onClick={() => setSelected(selected === n ? null : n)}
+            className={`border p-4 flex flex-col items-center gap-3 cursor-pointer transition-colors ${selected === n ? "border-lime/60 bg-lime/5" : "border-white/5 hover:border-white/15"}`}
+          >
+            <div id={`qr-table-${n}`} className="bg-white p-2 rounded">
+              <QRCodeSVG value={menuUrl(n)} size={100} />
+            </div>
+            <div className="text-center">
+              <p className="text-white font-bold text-sm">Стол №{n}</p>
+              <p className="text-gray-600 text-xs mt-0.5 break-all">/menu?table={n}</p>
+            </div>
+            <button
+              onClick={e => { e.stopPropagation(); downloadQR(n); }}
+              className="w-full text-xs py-1.5 border border-lime/30 text-lime hover:bg-lime/10 transition-colors uppercase tracking-wide"
+            >
+              Скачать PNG
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {selected && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setSelected(null)}>
+          <div className="bg-neutral-950 border border-white/10 p-8 flex flex-col items-center gap-4 max-w-xs w-full" onClick={e => e.stopPropagation()}>
+            <p className="text-white font-serif text-2xl">Стол №{selected}</p>
+            <div className="bg-white p-4 rounded">
+              <QRCodeSVG value={menuUrl(selected)} size={200} />
+            </div>
+            <p className="text-gray-500 text-xs text-center break-all">{menuUrl(selected)}</p>
+            <button onClick={() => downloadQR(selected)}
+              className="w-full bg-lime text-black font-bold uppercase tracking-widest py-3 text-sm hover:bg-lime/80 transition-colors">
+              Скачать PNG
+            </button>
+            <button onClick={() => setSelected(null)} className="text-gray-600 text-xs hover:text-white transition-colors">Закрыть</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Admin panel shell ─────────────────────────────────────────────────────────
 function AdminPanel() {
-  const [tab, setTab] = useState<"bookings" | "stats">("bookings");
+  const [tab, setTab] = useState<"bookings" | "stats" | "tables">("bookings");
+  const TABS = [
+    { key: "bookings", label: "Брони" },
+    { key: "stats",    label: "Статистика" },
+    { key: "tables",   label: "QR столов" },
+  ] as const;
   return (
     <div className="min-h-screen bg-black text-white">
       <header className="border-b border-white/5 px-6 py-4 flex gap-6 items-center sticky top-0 bg-black/95 backdrop-blur z-10">
@@ -228,17 +335,17 @@ function AdminPanel() {
           <h1 className="text-xl font-black tracking-widest text-lime uppercase">ГРИЗЛИ</h1>
           <p className="text-gray-500 text-xs tracking-widest">Администратор</p>
         </div>
-        <div className="flex gap-1 ml-auto">
-          {(["bookings", "stats"] as const).map(t => (
-            <button key={t} onClick={() => setTab(t)}
-              className={`px-4 py-2 text-xs uppercase tracking-widest transition-colors ${tab === t ? "bg-lime text-black font-bold" : "text-gray-500 hover:text-white"}`}>
-              {t === "bookings" ? "Брони" : "Статистика"}
+        <div className="flex gap-1 ml-auto flex-wrap">
+          {TABS.map(t => (
+            <button key={t.key} onClick={() => setTab(t.key)}
+              className={`px-4 py-2 text-xs uppercase tracking-widest transition-colors ${tab === t.key ? "bg-lime text-black font-bold" : "text-gray-500 hover:text-white"}`}>
+              {t.label}
             </button>
           ))}
         </div>
       </header>
       <div className="max-w-5xl mx-auto px-4 py-8">
-        {tab === "bookings" ? <BookingsTab /> : <StatsTab />}
+        {tab === "bookings" ? <BookingsTab /> : tab === "stats" ? <StatsTab /> : <TablesTab />}
       </div>
     </div>
   );

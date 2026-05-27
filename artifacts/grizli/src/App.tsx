@@ -7,6 +7,7 @@ import Home from "@/pages/Home";
 import Menu from "@/pages/Menu";
 import Gallery from "@/pages/Gallery";
 import Card from "@/pages/Card";
+import Booking from "@/pages/Booking";
 import LoyaltyCard from "@/pages/LoyaltyCard";
 import LoyaltyScanner from "@/pages/LoyaltyScanner";
 
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/menu" component={Menu} />
       <Route path="/gallery" component={Gallery} />
+      <Route path="/booking" component={Booking} />
       <Route path="/card" component={Card} />
       <Route path="/loyalty/scan" component={LoyaltyScanner} />
       <Route path="/loyalty/:token" component={LoyaltyCard} />
