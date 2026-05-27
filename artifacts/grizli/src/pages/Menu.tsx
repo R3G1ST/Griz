@@ -1,12 +1,12 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import { Flame, Sparkles } from "lucide-react";
+import NeonPage from "@/components/NeonPage";
 import { useMenuItems, type MenuItem } from "@/hooks/useSiteSettings";
 
 const fadeIn = {
   hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.2, 0.65, 0.3, 0.9] } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" as const } },
 };
 
 function getTableNumber(): string | null {
@@ -32,35 +32,69 @@ function buildSections(items: MenuItem[]): Section[] {
   }));
 }
 
-function MenuSection({ section }: { section: Section }) {
+function SectionBlock({ section, index }: { section: Section; index: number }) {
+  const isHookah = /кальян/i.test(section.section);
   return (
-    <section className="mb-20 md:mb-24">
-      <motion.h2 initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeIn}
-        className="font-serif text-white uppercase mb-10 pb-4 border-b border-white/10 break-words"
-        style={{ fontSize: "clamp(2rem, 7vw, 3.5rem)", lineHeight: 1 }}
-      >{section.section}</motion.h2>
-      {section.groups.map((group, gi) => (
-        <div key={gi} className="mb-10">
-          <motion.h3 initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeIn}
-            className="text-primary font-serif text-lg md:text-xl tracking-widest uppercase mb-5"
-          >{group.category}</motion.h3>
-          <div className="space-y-0">
-            {group.items.map((item, ii) => (
-              <motion.div key={item.id}
-                initial="hidden" whileInView="visible" viewport={{ once: true }}
-                variants={{ ...fadeIn, visible: { ...fadeIn.visible, transition: { ...fadeIn.visible.transition, delay: Math.min(ii * 0.05, 0.3) } } }}
-                className="flex justify-between items-start gap-4 py-4 md:py-5 border-b border-white/5 group hover:border-primary/30 transition-colors"
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="text-white font-light text-base md:text-lg group-hover:text-primary transition-colors">{item.name}</p>
-                  {item.description && <p className="text-muted-foreground text-xs md:text-sm font-light mt-1">{item.description}</p>}
-                </div>
-                <span className="text-primary font-light text-sm tracking-wide whitespace-nowrap">{item.price}</span>
-              </motion.div>
-            ))}
+    <section className="mb-16 sm:mb-20">
+      <div className="flex items-end justify-between gap-6 mb-8 sm:mb-10 pb-4 border-b border-[#D4FF3F]/20">
+        <div>
+          <div className="gn-mono text-[10px] tracking-[0.32em] text-[#D4FF3F]/80 mb-2">
+            / 00{index + 1} {isHookah ? "— SMOKE LINE" : "— BAR LINE"}
           </div>
+          <motion.h2
+            initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeIn}
+            className="gn-display gn-neon-white leading-[0.9] tracking-tighter"
+            style={{ fontSize: "clamp(36px, 7vw, 72px)" }}
+          >
+            {section.section}
+          </motion.h2>
         </div>
-      ))}
+        <div className="hidden sm:flex items-center gap-2 text-[#D4FF3F]/70">
+          {isHookah ? <Flame className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-10">
+        {section.groups.map((group, gi) => (
+          <div key={gi}>
+            <motion.h3
+              initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeIn}
+              className="gn-mono text-[11px] tracking-[0.3em] text-[#D4FF3F] uppercase mb-5"
+            >
+              ── {group.category}
+            </motion.h3>
+            <ul className="space-y-1">
+              {group.items.map((item, ii) => (
+                <motion.li
+                  key={item.id}
+                  initial="hidden" whileInView="visible" viewport={{ once: true }}
+                  variants={{
+                    ...fadeIn,
+                    visible: { ...fadeIn.visible, transition: { ...fadeIn.visible.transition, delay: Math.min(ii * 0.04, 0.25) } },
+                  }}
+                  className="group flex items-baseline gap-3 py-3 border-b border-white/5 hover:border-[#D4FF3F]/40 transition-colors"
+                >
+                  <span className="text-[#F5F1E8] text-[15px] sm:text-[16px] group-hover:text-[#D4FF3F] transition-colors">
+                    {item.name}
+                  </span>
+                  <span className="flex-1 mx-2 border-b border-dotted border-white/10 translate-y-[-3px]" />
+                  <span className="gn-mono text-[#D4FF3F] text-[13px] whitespace-nowrap">{item.price}</span>
+                </motion.li>
+              ))}
+            </ul>
+            {group.items.some(i => i.description) && (
+              <div className="mt-3 space-y-1.5">
+                {group.items.filter(i => i.description).map(i => (
+                  <p key={`d-${i.id}`} className="text-[12px] text-[#F5F1E8]/45 leading-relaxed">
+                    <span className="text-[#D4FF3F]/70 gn-mono text-[10px] mr-2">{i.name.toUpperCase()}</span>
+                    {i.description}
+                  </p>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </section>
   );
 }
@@ -71,39 +105,37 @@ export default function Menu() {
   const sections = useMemo(() => buildSections(items), [items]);
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <div className="bg-noise" />
-      <Navbar />
-      <div className="pt-24 pb-24 px-4 sm:px-6 max-w-5xl mx-auto">
+    <NeonPage
+      eyebrow="/ MENU · LIVE FROM CMS"
+      title={<>МЕНЮ <span className="gn-neon">ГРИЗЛИ</span></>}
+      lead="Всё для идеального вечера — от чаши до последнего глотка. Меню обновляется регулярно, цены актуальны."
+    >
+      <div className="max-w-[1280px] mx-auto px-5 sm:px-8 py-12 sm:py-16">
         {tableNumber && (
-          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-            className="mb-8 mt-4 border border-primary/40 bg-primary/10 px-6 py-4 flex items-center justify-between">
+          <motion.div
+            initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }}
+            className="mb-10 gn-glass-lime rounded-2xl px-6 py-5 flex items-center justify-between"
+          >
             <div>
-              <p className="text-primary text-xs uppercase tracking-widest mb-1">Вы сидите за</p>
-              <p className="text-white text-2xl font-serif font-bold">Стол № {tableNumber}</p>
+              <div className="gn-mono text-[10px] tracking-[0.3em] text-[#D4FF3F] mb-1">/ ВАШ СТОЛ</div>
+              <div className="gn-display text-3xl gn-neon-white">Стол № {tableNumber}</div>
             </div>
-            <span className="text-4xl">🐻</span>
+            <Flame className="w-8 h-8 text-[#D4FF3F]" />
           </motion.div>
         )}
-        <motion.div initial="hidden" animate="visible" variants={fadeIn} className="text-center mb-16">
-          <h1 className="font-serif text-white uppercase mb-4 break-words"
-              style={{ fontSize: "clamp(3rem, 12vw, 7rem)", lineHeight: 0.95 }}>Меню</h1>
-          <div className="w-20 h-px bg-primary mx-auto" />
-          <p className="text-muted-foreground font-light mt-6 max-w-md mx-auto">
-            Всё для идеального вечера — от чаши до последнего глотка.
-          </p>
-        </motion.div>
+
         {sections.length === 0 ? (
-          <p className="text-muted-foreground text-center py-20">Меню обновляется...</p>
+          <p className="text-[#F5F1E8]/55 text-center py-20 gn-mono text-sm tracking-[0.2em]">
+            МЕНЮ ОБНОВЛЯЕТСЯ...
+          </p>
         ) : (
-          sections.map((s, i) => <MenuSection key={i} section={s} />)
+          sections.map((s, i) => <SectionBlock key={i} section={s} index={i} />)
         )}
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeIn}
-          className="mt-8 text-center text-muted-foreground text-sm font-light">
-          Цены указаны в рублях. Меню может меняться — уточняйте у мастера.
-        </motion.div>
+
+        <div className="mt-8 gn-mono text-[10px] tracking-[0.24em] text-[#F5F1E8]/40 text-center">
+          ЦЕНЫ В РУБЛЯХ · МЕНЮ МОЖЕТ МЕНЯТЬСЯ — УТОЧНЯЙТЕ У МАСТЕРА
+        </div>
       </div>
-      <Footer />
-    </main>
+    </NeonPage>
   );
 }
