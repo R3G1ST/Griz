@@ -86,11 +86,33 @@ router.put("/menu/:id", requireAdmin, async (req: Request, res: Response) => {
     if (b.hookahModel !== undefined) updates.hookahModel = String(b.hookahModel);
     if (b.priceFeatured !== undefined) updates.priceFeatured = String(b.priceFeatured);
     if (b.descriptionFeatured !== undefined) updates.descriptionFeatured = String(b.descriptionFeatured);
+    if (b.image !== undefined) updates.image = String(b.image);
+    if (b.categoryImage !== undefined) updates.categoryImage = String(b.categoryImage);
+    if (b.ingredients !== undefined) updates.ingredients = String(b.ingredients);
+    if (b.allergens !== undefined) updates.allergens = String(b.allergens);
+    if (b.calories !== undefined) updates.calories = Number(b.calories);
+    if (b.protein !== undefined) updates.protein = Number(b.protein);
+    if (b.fat !== undefined) updates.fat = Number(b.fat);
+    if (b.carbs !== undefined) updates.carbs = Number(b.carbs);
+    if (b.menuCategory !== undefined) updates.menuCategory = String(b.menuCategory);
+    if (b.status !== undefined) updates.status = String(b.status);
+    if (b.isVisible !== undefined) updates.isVisible = Number(b.isVisible);
     if (b.tobaccoBrand !== undefined) updates.tobaccoBrand = String(b.tobaccoBrand);
     if (b.tobaccoFlavor !== undefined) updates.tobaccoFlavor = String(b.tobaccoFlavor);
     if (b.hookahModel !== undefined) updates.hookahModel = String(b.hookahModel);
     if (b.priceFeatured !== undefined) updates.priceFeatured = String(b.priceFeatured);
     if (b.descriptionFeatured !== undefined) updates.descriptionFeatured = String(b.descriptionFeatured);
+    if (b.image !== undefined) updates.image = String(b.image);
+    if (b.categoryImage !== undefined) updates.categoryImage = String(b.categoryImage);
+    if (b.ingredients !== undefined) updates.ingredients = String(b.ingredients);
+    if (b.allergens !== undefined) updates.allergens = String(b.allergens);
+    if (b.calories !== undefined) updates.calories = Number(b.calories);
+    if (b.protein !== undefined) updates.protein = Number(b.protein);
+    if (b.fat !== undefined) updates.fat = Number(b.fat);
+    if (b.carbs !== undefined) updates.carbs = Number(b.carbs);
+    if (b.menuCategory !== undefined) updates.menuCategory = String(b.menuCategory);
+    if (b.status !== undefined) updates.status = String(b.status);
+    if (b.isVisible !== undefined) updates.isVisible = Number(b.isVisible);
 
     // String fields: trim, enforce non-empty + length limits to prevent invalid persisted state
     for (const k of ["section", "category", "name", "price"] as const) {
