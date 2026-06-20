@@ -1,0 +1,48 @@
+import { Switch, Route, Router as WouterRouter } from "wouter";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import NotFound from "@/pages/not-found";
+import Home from "@/pages/Home";
+import Menu from "@/pages/Menu";
+import Gallery from "@/pages/Gallery";
+import Card from "@/pages/Card";
+import Booking from "@/pages/Booking";
+import Reviews from "@/pages/Reviews";
+import Loyalty from "@/pages/Loyalty";
+import LoyaltyCard from "@/pages/LoyaltyCard";
+import LoyaltyScanner from "@/pages/LoyaltyScanner";
+
+const queryClient = new QueryClient();
+
+function Router() {
+  return (
+    <Switch>
+      <Route path="/" component={Home} />
+      <Route path="/menu" component={Menu} />
+      <Route path="/gallery" component={Gallery} />
+      <Route path="/booking" component={Booking} />
+      <Route path="/reviews" component={Reviews} />
+      <Route path="/loyalty" component={Loyalty} />
+      <Route path="/card" component={Card} />
+      <Route path="/loyalty/scan" component={LoyaltyScanner} />
+      <Route path="/loyalty/:token" component={LoyaltyCard} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+          <Router />
+        </WouterRouter>
+        <Toaster />
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+}
+
+export default App;

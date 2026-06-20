@@ -39,6 +39,11 @@ export type ImageSlots = {
   cocktail: string;
   interior: string;
 };
+export type TypographySettings = Record<string, {
+  desktopSize: number;
+  mobileSize: number;
+  font: string;
+}>;
 export const IMAGE_SLOT_LABELS: Record<keyof ImageSlots, string> = {
   logo: "Логотип (шапка, карта, /loyalty-card)",
   heroBg: "Фон главного экрана",
@@ -57,6 +62,8 @@ export type SiteSettings = {
   loyalty?: LoyaltySettings;
   footer?: FooterSettings;
   images?: Partial<ImageSlots>;
+  typography?: TypographySettings;
+  ticker?: string[];
 };
 
 const DEFAULTS: Required<SiteSettings> = {
@@ -96,6 +103,7 @@ const DEFAULTS: Required<SiteSettings> = {
     copyright: "© ГРИЗЛИ Hookah Lounge",
   },
   images: { logo: "", heroBg: "", bearSkull: "", cocktail: "", interior: "" },
+  ticker: ["СЕЙЧАС ОТКРЫТО", "ПРЕМИАЛЬНЫЙ ТАБАК", "АВТОРСКИЕ КОКТЕЙЛИ", "БРОНЬ +7 (916) 328-38-91", "г. Тюмень, ул. Новосёлов, 92"],
 };
 
 let cache: SiteSettings | null = null;
@@ -129,6 +137,8 @@ export function useSiteSettings(): Required<SiteSettings> {
     loyalty:  { ...DEFAULTS.loyalty, ...(s.loyalty ?? {}) },
     footer:   { ...DEFAULTS.footer, ...(s.footer ?? {}) },
     images:   { ...DEFAULTS.images, ...(s.images ?? {}) } as ImageSlots,
+    typography: s.typography ?? {},
+    ticker: s.ticker?.length ? s.ticker : DEFAULTS.ticker,
   };
 }
 
@@ -175,4 +185,28 @@ export function useReviews(): { reviews: Review[]; reload: () => void; submit: (
     } catch { return false; }
   };
   return { reviews, reload, submit };
+}
+
+// Категории меню из БД
+export type MenuCategory = {
+  id: number;
+  key: string;
+  label: string;
+  emoji?: string | null;
+  image?: string | null;
+  display_order: number;
+  is_active: boolean;
+};
+
+export function useMenuCategories(): MenuCategory[] {
+  const [categories, setCategories] = useState<MenuCategory[]>([]);
+  
+  useEffect(() => {
+    fetch(API("/api/menu-categories"))
+      .then(r => r.json())
+      .then(data => setCategories(data.filter((c: MenuCategory) => c.is_active).sort((a: MenuCategory, b: MenuCategory) => a.display_order - b.display_order)))
+      .catch(() => {});
+  }, []);
+  
+  return categories;
 }

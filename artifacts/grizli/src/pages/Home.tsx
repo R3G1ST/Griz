@@ -4,7 +4,7 @@ import {
   ArrowUpRight, ArrowRight, Calendar, Clock, Flame, GlassWater,
   Instagram, MapPin, Menu as MenuIcon, Phone, Send, Sparkles,
   Star, UtensilsCrossed, Wind, Zap, X,
-} from "lucide-react";
+Shield} from "lucide-react";
 
 import {
   useSiteSettings, useReviews, useMenuItems, imgSrc, type MenuItem,
@@ -81,15 +81,24 @@ function formatPrice(p: string) {
 
 function Ticker({ items }: { items: string[] }) {
   const row = items.length ? items : ["GRIZLI LOUNGE", "ТЮМЕНЬ", "16:00 — 02:00"];
+
+  const renderBlock = (suffix: string) => (
+    <div className="flex shrink-0">
+      {row.map((t, i) => (
+        <span key={`${suffix}-${i}`} className="px-6 sm:px-8 flex items-center gap-3">
+          <span className="text-[#D4FF3F]/90">◆</span>
+          <span className={i % 2 === 0 ? "gn-neon" : "text-[#F5F1E8]/70"}>{t}</span>
+        </span>
+      ))}
+    </div>
+  );
+
   return (
     <div className="relative overflow-hidden border-y border-[#D4FF3F]/25 bg-black/60 gn-ticker-mask">
-      <div className="flex whitespace-nowrap py-3 gn-mono text-[10px] sm:text-[11px] tracking-[0.3em] gn-marquee">
-        {[...row, ...row, ...row, ...row].map((t, i) => (
-          <span key={i} className="px-6 sm:px-8 flex items-center gap-3 shrink-0">
-            <span className="text-[#D4FF3F]/90">◆</span>
-            <span className={i % 2 === 0 ? "gn-neon" : "text-[#F5F1E8]/70"}>{t}</span>
-          </span>
-        ))}
+      <div className="flex w-max whitespace-nowrap py-3 gn-mono text-[10px] sm:text-[11px] tracking-[0.3em] gn-marquee">
+        {renderBlock('a')}
+        {renderBlock('b')}
+        {renderBlock('c')}
       </div>
     </div>
   );
@@ -141,7 +150,21 @@ function MenuCard({ card }: { card: CategoryCard }) {
 }
 
 export default function Home() {
-  const { hero, brand, contacts, schedule, loyalty, images, footer } = useSiteSettings();
+  const { hero, brand, contacts, schedule, loyalty, images, footer, rules, typography, ticker } = useSiteSettings();
+
+  const getFontSize = (section: string, field: string, defaultDesktop: number, defaultMobile: number) => {
+    const settings = typography?.[`${section}.${field}`];
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    if (settings) {
+      return isMobile ? (settings.mobileSize || defaultMobile) : (settings.desktopSize || defaultDesktop);
+    }
+    return isMobile ? defaultMobile : defaultDesktop;
+  };
+
+  const getFontFamily = (section: string, field: string) => {
+    const settings = typography?.[`${section}.${field}`];
+    return settings?.font || 'sans-serif';
+  };
   const { reviews } = useReviews();
   const menuItems = useMenuItems();
   const cards = useMemo(() => buildCards(menuItems), [menuItems]);
@@ -161,21 +184,18 @@ export default function Home() {
   const phoneClean = contacts.phone.replace(/[^\d+]/g, "");
 
   const featured = useMemo(() => {
-    // Featured "кальян недели": match either section OR category by /кальян/i, then fall back to any active item.
-    const hookahs = menuItems.filter(
-      i => i.isActive && (/кальян/i.test(i.section) || /кальян/i.test(i.category)),
-    );
-    return (hookahs[0] ?? menuItems.find(i => i.isActive) ?? null);
+    // Ищем позицию с флагом isFeatured === 1
+    return menuItems.find(i => i.isActive && i.isFeatured === 1) ?? null;
   }, [menuItems]);
 
-  const tickerItems = [
+  const tickerItems = (ticker && ticker.length > 0 ? ticker : [
     "СЕЙЧАС ОТКРЫТО",
     "ПРЕМИАЛЬНЫЙ ТАБАК",
     "АВТОРСКИЕ КОКТЕЙЛИ",
     `БРОНЬ ${contacts.phone}`,
     contacts.address.toUpperCase(),
-    featured ? `КАЛЬЯН НЕДЕЛИ — ${featured.name.toUpperCase()}` : "КАЛЬЯН НЕДЕЛИ",
-  ];
+      featured ? (/hookah/i.test(featured.section) ? `HOOKAH OF THE WEEK — ${featured.name.toUpperCase()}` : `КАЛЬЯН НЕДЕЛИ — ${featured.name.toUpperCase()}`) : (/hookah/i.test(featured?.section || "") ? "HOOKAH OF THE WEEK" : "КАЛЬЯН НЕДЕЛИ"),
+  ]);
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const menuToggleRef = useRef<HTMLButtonElement | null>(null);
@@ -296,7 +316,7 @@ export default function Home() {
                 <span className="w-1.5 h-1.5 rounded-full bg-[#D4FF3F] shadow-[0_0_10px_#D4FF3F]" />
                 СЕЙЧАС ОТКРЫТО
               </span>
-              <span className="gn-chip-dim hidden sm:inline-flex">v.2026 / {brand.city.toUpperCase()}</span>
+              <span className="gn-chip-dim hidden sm:inline-flex" style={{ fontSize: `${getFontSize("brand", "city", 14, 12)}px`, fontFamily: getFontFamily("brand", "city") }}>v.2026 / {brand.city.toUpperCase()}</span>
             </div>
             <div className="hidden lg:flex items-center gap-6 gn-mono text-[11px] tracking-[0.2em] text-[#F5F1E8]/55">
               <span>N 57°09′</span>
@@ -313,7 +333,7 @@ export default function Home() {
             <h1 className="gn-display font-extrabold leading-[0.82] tracking-tighter">
               <span
                 className="block gn-neon"
-                style={{ fontSize: "clamp(72px, 18vw, 200px)" }}
+                style={{ fontSize: `${getFontSize("hero", "title1", 200, 24)}px`, fontFamily: getFontFamily("hero", "title1") }}
               >
                 {(hero.title1 || brand.name).toUpperCase()}
               </span>
@@ -327,7 +347,7 @@ export default function Home() {
             </h1>
 
             <div className="flex flex-col md:flex-row md:items-end md:justify-between mt-8 md:mt-10 gap-6 md:gap-10">
-              <p className="gn-sans text-[15px] sm:text-[18px] text-[#F5F1E8]/75 max-w-[520px] leading-relaxed">
+              <p className="gn-sans text-[15px] sm:text-[18px] text-[#F5F1E8]/75 max-w-[520px] leading-relaxed" style={{ fontSize: `${getFontSize("hero", "subtitle", 18, 14)}px`, fontFamily: getFontFamily("hero", "subtitle") }}>
                 {hero.subtitle}
               </p>
 
@@ -375,7 +395,7 @@ export default function Home() {
             {[
               { Icon: MapPin, text: contacts.address.replace(/^г\.\s*/i, "").toUpperCase() },
               { Icon: Clock, text: `ЕЖЕДНЕВНО · ${hoursToday}` },
-              { Icon: Phone, text: contacts.phone },
+              { Icon: Phone, text: contacts.phone, style: { fontSize: `${getFontSize("contacts", "phone", 14, 12)}px`, fontFamily: getFontFamily("contacts", "phone") } },
               { Icon: Wind,  text: "ПРОФ. ВЕНТИЛЯЦИЯ" },
             ].map(({ Icon, text }, i) => (
               <div key={i} className="flex items-center gap-3 min-w-0">
@@ -385,6 +405,31 @@ export default function Home() {
                 </span>
               </div>
             ))}
+            {/* Соцсети под телефоном с надписью "Мы в" */}
+            {(contacts.instagram || contacts.telegram || contacts.vk) && (
+              <div className="flex flex-wrap items-center gap-4 min-w-0 sm:col-span-2 lg:col-span-1 mt-2">
+                {contacts.instagram && (
+                  <a href={contacts.instagram} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-[11px] sm:text-[12px] tracking-[0.18em] text-[#F5F1E8]/85 hover:text-[#D4FF3F] transition group uppercase" aria-label="Instagram">
+                    <span>Мы в</span>
+                    <Instagram className="w-4 h-4 text-[#F5F1E8]/70 group-hover:text-[#D4FF3F]" />
+                  </a>
+                )}
+                {contacts.telegram && (
+                  <a href={contacts.telegram} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-[11px] sm:text-[12px] tracking-[0.18em] text-[#F5F1E8]/85 hover:text-[#D4FF3F] transition group uppercase" aria-label="Telegram">
+                    <span>Мы в</span>
+                    <Send className="w-4 h-4 text-[#F5F1E8]/70 group-hover:text-[#D4FF3F]" />
+                  </a>
+                )}
+                {contacts.vk && (
+                  <a href={contacts.vk} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-[11px] sm:text-[12px] tracking-[0.18em] text-[#F5F1E8]/85 hover:text-[#D4FF3F] transition group uppercase" aria-label="VK">
+                    <span>Мы в</span>
+                    <svg className="w-4 h-4 text-[#F5F1E8]/70 group-hover:text-[#D4FF3F]" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M15.07 2H8.93C3.33 2 2 3.33 2 8.93v6.14C2 20.67 3.33 22 8.93 22h6.14C20.67 22 22 20.67 22 15.07V8.93C22 3.33 20.67 2 15.07 2zm-1.93 14.26h-1.47c-.55 0-.72-.44-1.71-1.44-.86-.83-1.23-.94-1.45-.94-.31 0-.39.09-.39.51v1.31c0 .36-.11.57-1.06.57-1.57 0-3.31-.95-4.53-2.72C.89 11.23.5 9.24.5 8.81c0-.22.09-.42.51-.42h1.47c.38 0 .52.17.67.57.73 2.12 1.95 3.98 2.45 3.98.19 0 .27-.09.27-.57v-2.18c-.06-.99-.58-1.07-.58-1.42 0-.17.14-.34.36-.34h2.31c.31 0 .42.17.42.54v2.93c0 .31.14.42.23.42.19 0 .34-.11.69-.46 1.07-1.2 1.83-3.05 1.83-3.05.1-.22.27-.42.65-.42h1.47c.44 0 .54.22.44.54-.19.89-2.03 3.54-2.03 3.54-.16.26-.22.38 0 .67.16.22.69.67 1.04 1.08.65.74 1.15 1.36 1.28 1.79.14.42-.08.64-.5.64z"/>
+                    </svg>
+                  </a>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -402,8 +447,17 @@ export default function Home() {
                   <Sparkles className="w-3 h-3" /> WEEKLY DROP
                 </div>
                 <h2 className="gn-display leading-none tracking-tighter" style={{ fontSize: "clamp(36px, 7vw, 64px)" }}>
-                  <span className="gn-neon-white">КАЛЬЯН </span>
-                  <span className="gn-neon">НЕДЕЛИ</span>
+                  {/hookah/i.test(featured.section) ? (
+                    <>
+                      <span className="gn-neon-white">HOOKAH </span>
+                      <span className="gn-neon">НЕДЕЛИ</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="gn-neon-white">КАЛЬЯН </span>
+                      <span className="gn-neon">НЕДЕЛИ</span>
+                    </>
+                  )}
                 </h2>
               </div>
               <div className="hidden md:flex items-center gap-3 gn-mono text-[11px] tracking-[0.2em] text-[#F5F1E8]/50">
@@ -462,45 +516,8 @@ export default function Home() {
                 <div className="mt-4 flex flex-wrap gap-2">
                   <span className="gn-chip">{featured.category.toUpperCase()}</span>
                   <span className="gn-chip">{featured.section.toUpperCase()}</span>
-                  <span className="gn-chip">PHUNNEL</span>
-                  <span className="gn-chip">COCO 25mm</span>
-                </div>
-
-                <div className="gn-divider my-6 sm:my-7 opacity-60" />
-
-                <div className="grid grid-cols-2 gap-5">
-                  <div>
-                    <div className="gn-mono text-[10px] tracking-[0.3em] text-[#F5F1E8]/55">КРЕПОСТЬ</div>
-                    <div className="mt-2 flex gap-1">
-                      {[1, 2, 3, 4, 5].map(i => (
-                        <span
-                          key={i}
-                          className={`h-5 w-2 rounded-[1px] ${
-                            i <= 4 ? "bg-[#D4FF3F] shadow-[0_0_8px_#D4FF3F]" : "bg-[#F5F1E8]/10"
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="gn-mono text-[10px] tracking-[0.3em] text-[#F5F1E8]/55">СЕССИЯ</div>
-                    <div className="mt-2 gn-mono text-[18px] sm:text-[20px] text-[#F5F1E8]">
-                      ~120<span className="text-[#F5F1E8]/40 text-[12px]"> МИН</span>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="gn-mono text-[10px] tracking-[0.3em] text-[#F5F1E8]/55">ЧАША</div>
-                    <div className="mt-2 gn-mono text-[14px] text-[#F5F1E8]">Phunnel · Glaze</div>
-                  </div>
-                  <div>
-                    <div className="gn-mono text-[10px] tracking-[0.3em] text-[#F5F1E8]/55">УГОЛЬ</div>
-                    <div className="mt-2 gn-mono text-[14px] text-[#F5F1E8]">Coco · 25mm</div>
-                  </div>
-                </div>
-
-                <div className="gn-divider my-6 sm:my-7 opacity-60" />
-
-                <div className="flex items-end justify-between gap-4 flex-wrap">
+                  <span className="gn-chip">{featured.bowl || "PHUNNEL"}</span>
+                  <span className="gn-chip">{featured.coal || "COCO 25mm"}</span>
                   <div>
                     <div className="gn-mono text-[10px] tracking-[0.3em] text-[#F5F1E8]/55">ЦЕНА</div>
                     <div className="gn-display leading-none mt-1" style={{ fontSize: "clamp(32px, 5vw, 44px)" }}>
@@ -521,44 +538,6 @@ export default function Home() {
         </section>
       )}
 
-      {/* ============ MENU GRID ============ */}
-      {cards.length > 0 && (
-        <section className="relative">
-          <div className="gn-divider opacity-70" />
-          <div className="relative max-w-[1280px] mx-auto px-5 sm:px-8 py-16 sm:py-24">
-            <div className="flex items-end justify-between mb-10 sm:mb-12 gap-4 flex-wrap">
-              <div>
-                <div className="gn-chip mb-4 inline-flex">/ MENU / 003</div>
-                <h2 className="gn-display leading-none tracking-tighter" style={{ fontSize: "clamp(36px, 7vw, 64px)" }}>
-                  <span className="gn-neon-white">КАРТА </span>
-                  <span className="gn-stroke">ЗАВЕДЕНИЯ</span>
-                </h2>
-              </div>
-              <Link href="/menu" className="hidden md:inline-flex items-center gap-2 gn-mono text-[11px] tracking-[0.22em] uppercase text-[#D4FF3F] border-b border-[#D4FF3F]/40 pb-1">
-                  Полное меню — {menuItems.filter(i => i.isActive).length} позиций
-                  <ArrowUpRight className="w-3.5 h-3.5" />
-                
-              </Link>
-            </div>
-
-            <div className={`grid gap-6 ${
-              cards.length === 1 ? "grid-cols-1" :
-              cards.length === 2 ? "grid-cols-1 md:grid-cols-2" :
-                                  "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-            }`}>
-              {cards.map(c => <MenuCard key={c.title} card={c} />)}
-            </div>
-
-            <div className="mt-10 md:hidden">
-              <Link href="/menu" className="block w-full text-center gn-cta-ghost rounded-full px-6 py-4 text-[12px] tracking-[0.18em] uppercase">
-                  Полное меню →
-                
-              </Link>
-            </div>
-          </div>
-        </section>
-      )}
-
       {/* ============ LOYALTY ============ */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 gn-smoke opacity-80" />
@@ -568,7 +547,7 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
             <div className="lg:col-span-7">
               <div className="gn-chip mb-5 inline-flex items-center gap-2">
-                <Zap className="w-3 h-3" /> {loyalty.tagline.toUpperCase()}
+                <Zap className="w-3 h-3" /> <span style={{ fontSize: `${getFontSize("loyalty", "tagline", 16, 14)}px`, fontFamily: getFontFamily("loyalty", "tagline") }}>{loyalty.tagline.toUpperCase()}</span>
               </div>
               <h2
                 className="gn-display leading-[0.85] tracking-tighter"
@@ -584,7 +563,7 @@ export default function Home() {
                 <span className="gn-neon">ПОДАРОК</span>
               </h2>
               <p className="mt-6 max-w-[520px] text-[14px] sm:text-[15px] text-[#F5F1E8]/65 leading-relaxed">
-                {loyalty.description}
+                <span style={{ fontSize: `${getFontSize("loyalty", "description", 16, 14)}px`, fontFamily: getFontFamily("loyalty", "description") }}>{loyalty.description}</span>
               </p>
 
               <div className="mt-8 sm:mt-10 flex flex-wrap items-center gap-4 sm:gap-5">
@@ -653,6 +632,43 @@ export default function Home() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+            {/* Rules */}
+      <section className="relative py-16 sm:py-24 px-5 sm:px-8 border-t border-white/5 overflow-hidden">
+        <div className="absolute inset-0 gn-smoke opacity-60" />
+        <div className="absolute inset-0 gn-grid opacity-30" />
+        <div className="relative max-w-[1280px] mx-auto">
+          <div className="gn-chip mb-5 inline-flex items-center gap-2">
+            <Shield className="w-3 h-3" /> <span className="gn-mono text-[10px] tracking-[0.3em] text-[#F5F1E8]/55">ПРАВИЛА ДОМА</span>
+          </div>
+          
+          <h2 className="gn-display leading-[0.85] tracking-tighter mb-10" style={{ fontSize: "clamp(40px, 8vw, 80px)" }}>
+            <span className="gn-neon-white">ЗДЕСЬ </span>
+            <span className="gn-neon">ПРИНЯТО</span>
+            <br />
+            <span className="gn-stroke">УВАЖАТЬ</span>{" "}
+            <span className="gn-neon-white">ДРУГ</span>
+            <span className="gn-neon">ДРУГА</span>
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {(rules || []).map((rule: any, i: number) => (
+              <div key={i} className="gn-glass rounded-md p-6 sm:p-7 relative gn-corner">
+                <span className="c1" /><span className="c2" />
+                <div className="gn-mono text-[10px] tracking-[0.3em] text-[#F5F1E8]/55 mb-3">
+                  ПРАВИЛО №{String(i + 1).padStart(2, '0')}
+                </div>
+                <h3 className="gn-display text-[18px] sm:text-[22px] gn-neon-white leading-tight mb-3" style={{ fontSize: `${getFontSize("rules", `${i}.title`, 22, 18)}px`, fontFamily: getFontFamily("rules", `${i}.title`) }}>
+                  {rule.title.toUpperCase()}
+                </h3>
+                <p className="text-[#F5F1E8]/70 text-[13px] sm:text-[14px] leading-relaxed" style={{ fontSize: `${getFontSize("rules", `${i}.text`, 14, 13)}px`, fontFamily: getFontFamily("rules", `${i}.text`) }}>
+                  {rule.text}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -783,7 +799,7 @@ export default function Home() {
                 </div>
               </div>
               <p className="mt-6 text-[13px] sm:text-[14px] text-[#F5F1E8]/55 max-w-[380px] leading-relaxed">
-                {footer.tagline}
+                <span style={{ fontSize: `${getFontSize("footer", "tagline", 14, 12)}px`, fontFamily: getFontFamily("footer", "tagline") }}>{footer.tagline}</span>
               </p>
               <div className="mt-6 flex items-center gap-3 flex-wrap">
                 {contacts.instagram && (

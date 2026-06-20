@@ -1,3 +1,39 @@
+
+// --- Красивые toast-уведомления ---
+function showNiceAlert(msg: string, isError = false) {
+  let container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    container.className = 'fixed top-20 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-2 w-[calc(100%-32px)] max-w-sm';
+    document.body.appendChild(container);
+  }
+  
+  // Удаляем предыдущие уведомления того же типа
+  const existing = container.querySelectorAll('[data-type="' + (isError ? 'error' : 'success') + '"]');
+  existing.forEach(e => e.remove());
+  
+  const toast = document.createElement('div');
+  toast.setAttribute('data-type', isError ? 'error' : 'success');
+  toast.className = `bg-neutral-900 border ${isError ? 'border-red-500' : 'border-lime'} rounded-lg px-3 py-2 shadow-xl transition-all duration-300 opacity-0 -translate-y-2`;
+  toast.innerHTML = `
+    <div class="flex items-start gap-3">
+      <div class="${isError ? 'text-red-500' : 'text-lime'} text-base flex-shrink-0">${isError ? '✕' : '✓'}</div>
+      <div class="flex-1 min-w-0">
+        <div class="${isError ? 'text-red-400' : 'text-lime'} text-[10px] font-bold uppercase tracking-wider mb-0.5">${isError ? 'Ошибка' : 'Успешно'}</div>
+        <div class="text-white text-xs break-words">${msg}</div>
+      </div>
+    </div>
+  `;
+  
+  container.appendChild(toast);
+  requestAnimationFrame(() => { toast.style.opacity = '1'; toast.style.transform = 'translateY(0)'; });
+  setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateY(-10px)'; }, 3000);
+  setTimeout(() => toast.remove(), 3500);
+}
+
+
+
 import { useState, useEffect, useCallback } from "react";
 import { Router as WouterRouter, Switch, Route } from "wouter";
 import {
@@ -11,8 +47,8 @@ const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD ?? "grizli2024";
 
 // Authenticated fetch wrapper — adds admin password header to every request
 const adminFetch = (url: string, init: RequestInit = {}) => {
-  const headers = new Headers(init.headers);
-  headers.set("x-admin-password", sessionStorage.getItem("grizli_admin_pw") ?? "");
+  const headers = new Headers(init.headers || {});
+  headers.set("x-admin-password", ADMIN_PASSWORD);
   return fetch(url, { ...init, headers });
 };
 
@@ -389,12 +425,7 @@ function HeatmapTab() {
 }
 
 // ── Tables QR tab ─────────────────────────────────────────────────────────────
-const SITE_DOMAIN = (() => {
-  // In admin, API calls go to /api (same origin via proxy), but we need the public site domain for QR
-  const host = window.location.host;
-  // The admin is at /admin/, grizli is at /
-  return `${window.location.protocol}//${host}`;
-})();
+const SITE_DOMAIN = "https://menu-grizzly-lounge.qmbox.ru";
 
 function TablesTab() {
   const [tableCount, setTableCount] = useState(10);
@@ -494,6 +525,9 @@ function SettingsTab() {
   const [data, setData] = useState<any>({});
   const [saved, setSaved] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [fontModal, setFontModal] = useState<{section: string; field: string; value: string} | null>(null);
+  const [fontSettings, setFontSettings] = useState({desktopSize: 200, mobileSize: 24, font: 'sans-serif'});
+  const [showDesktopPreview, setShowDesktopPreview] = useState(false);
 
   useEffect(() => {
     fetch(`${API_BASE}/settings`).then(r => r.json()).then(d => { setData(d || {}); setLoading(false); });
@@ -501,12 +535,71 @@ function SettingsTab() {
 
   const update = (key: string, value: any) => setData((prev: any) => ({ ...prev, [key]: value }));
 
-  const save = async (key: string) => {
-    await adminFetch(`${API_BASE}/settings/${key}`, {
-      method: "PUT", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ value: data[key] }),
+  const openFontModal = (section: string, field: string, value: string) => {
+    const settings = data.typography?.[`${section}.${field}`] || {};
+    setFontSettings({
+      desktopSize: settings.desktopSize || 200,
+      mobileSize: settings.mobileSize || 24,
+      font: settings.font || 'sans-serif'
     });
-    setSaved(key); setTimeout(() => setSaved(null), 1500);
+    setFontModal({section, field, value});
+  };
+
+  const applyFontSettings = async () => {
+    if (!fontModal) return;
+    const key = `${fontModal.section}.${fontModal.field}`;
+    const typography = data.typography || {};
+    typography[key] = fontSettings;
+    update('typography', typography);
+    
+    // Сохраняем в базу данных
+    try {
+      const response = await adminFetch(`${API_BASE}/settings/typography`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value: typography }),
+      });
+      if (response.ok) {
+        showNiceAlert('Настройки шрифта сохранены');
+      } else {
+        showNiceAlert('Не удалось сохранить', true);
+      }
+    } catch (err) {
+      showNiceAlert('Ошибка при сохранении', true);
+    }
+    
+    setFontModal(null);
+  };
+
+  const fontSettingsBtn = (section: string, field: string, value: string) => (
+    <button 
+      onClick={() => openFontModal(section, field, value)}
+      className="ml-2 text-gray-500 hover:text-lime transition-colors"
+      title="Настройки шрифта"
+    >
+      ⚙️
+    </button>
+  );
+
+
+  const save = async (key: string) => {
+    try {
+      const response = await adminFetch(`${API_BASE}/settings/${key}`, {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value: data[key] }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        showNiceAlert('Не удалось сохранить данные', true);
+        return;
+      }
+      const updated = await fetch(`${API_BASE}/settings`).then(r => r.json());
+      setData(updated || {});
+      setSaved(key);
+      setTimeout(() => setSaved(null), 1500);
+    } catch (err) {
+      showNiceAlert('Произошла ошибка при сохранении', true);
+    }
   };
 
   if (loading) return <div className="text-gray-500 text-center py-20">Загрузка...</div>;
@@ -516,6 +609,7 @@ function SettingsTab() {
   const about = data.about || {};
   const schedule = data.schedule || [];
   const rules = data.rules || [];
+  const ticker = data.ticker || [];
   const brand = data.brand || {};
   const loyalty = data.loyalty || {};
   const footer = data.footer || {};
@@ -553,7 +647,7 @@ function SettingsTab() {
           ].map(([key, label]) => (
             <div key={key}>
               <label className={labelClass}>{label}</label>
-              <input value={brand[key] || ""} onChange={e => update("brand", { ...brand, [key]: e.target.value })} className={fieldClass} />
+              <div className="flex gap-2"><input value={brand[key] || ""} onChange={e => update("brand", { ...brand, [key]: e.target.value })} className={`${fieldClass} flex-1`} />{fontSettingsBtn("brand", key, brand[key] || "")}</div>
             </div>
           ))}
         </div>
@@ -573,8 +667,7 @@ function SettingsTab() {
           ].map(([key, label]) => (
             <div key={key}>
               <label className={labelClass}>{label}</label>
-              <input value={contacts[key] || ""} onChange={e => update("contacts", { ...contacts, [key]: e.target.value })}
-                className={fieldClass} />
+              <div className="flex gap-2"><input value={contacts[key] || ""} onChange={e => update("contacts", { ...contacts, [key]: e.target.value })} className={`${fieldClass} flex-1`} />{fontSettingsBtn("contacts", key, contacts[key] || "")}</div>
             </div>
           ))}
         </div>
@@ -589,15 +682,21 @@ function SettingsTab() {
         <div className="grid md:grid-cols-2 gap-3 mb-3">
           <div>
             <label className={labelClass}>Заголовок (большой)</label>
-            <input value={hero.title1 || ""} onChange={e => update("hero", { ...hero, title1: e.target.value })} className={fieldClass} />
+            <div className="flex gap-2">
+              <input value={hero.title1 || ""} onChange={e => update("hero", { ...hero, title1: e.target.value })} className={`${fieldClass} flex-1`} />
+              {fontSettingsBtn("hero", "title1", hero.title1 || "")}
+            </div>
+            
           </div>
           <div>
             <label className={labelClass}>Заголовок (курсив)</label>
-            <input value={hero.title2 || ""} onChange={e => update("hero", { ...hero, title2: e.target.value })} className={fieldClass} />
+            <div className="flex gap-2"><input value={hero.title2 || ""} onChange={e => update("hero", { ...hero, title2: e.target.value })} className={`${fieldClass} flex-1`} />{fontSettingsBtn("hero", "title2", hero.title2 || "")}</div>
+            
           </div>
         </div>
         <label className={labelClass}>Подзаголовок</label>
-        <textarea value={hero.subtitle || ""} onChange={e => update("hero", { ...hero, subtitle: e.target.value })} rows={2} className={`${fieldClass} resize-none`} />
+        <div className="flex gap-2"><textarea value={hero.subtitle || ""} onChange={e => update("hero", { ...hero, subtitle: e.target.value })} rows={2} className={`${fieldClass} resize-none flex-1`} />{fontSettingsBtn("hero", "subtitle", hero.subtitle || "")}</div>
+        
       </div>
 
       {/* About */}
@@ -607,11 +706,11 @@ function SettingsTab() {
           {saveBtn("about")}
         </div>
         <label className={labelClass}>Заголовок (используйте точки для разбивки)</label>
-        <input value={about.title || ""} onChange={e => update("about", { ...about, title: e.target.value })} className={`${fieldClass} mb-3`} />
+        <div className="flex gap-2"><input value={about.title || ""} onChange={e => update("about", { ...about, title: e.target.value })} className={`${fieldClass} mb-3 flex-1`} />{fontSettingsBtn("about", "title", about.title || "")}</div>
         <label className={labelClass}>Параграф 1</label>
-        <textarea value={about.p1 || ""} onChange={e => update("about", { ...about, p1: e.target.value })} rows={3} className={`${fieldClass} resize-none mb-3`} />
+        <div className="flex gap-2"><textarea value={about.p1 || ""} onChange={e => update("about", { ...about, p1: e.target.value })} rows={3} className={`${fieldClass} resize-none mb-3 flex-1`} />{fontSettingsBtn("about", "p1", about.p1 || "")}</div>
         <label className={labelClass}>Параграф 2</label>
-        <textarea value={about.p2 || ""} onChange={e => update("about", { ...about, p2: e.target.value })} rows={3} className={`${fieldClass} resize-none`} />
+        <div className="flex gap-2"><textarea value={about.p2 || ""} onChange={e => update("about", { ...about, p2: e.target.value })} rows={3} className={`${fieldClass} resize-none flex-1`} />{fontSettingsBtn("about", "p2", about.p2 || "")}</div>
       </div>
 
       {/* Schedule */}
@@ -650,11 +749,31 @@ function SettingsTab() {
           </div>
           <div>
             <label className={labelClass}>Надзаголовок (программа)</label>
-            <input value={loyalty.tagline || ""} onChange={e => update("loyalty", { ...loyalty, tagline: e.target.value })} className={fieldClass} />
+            <div className="flex gap-2"><input value={loyalty.tagline || ""} onChange={e => update("loyalty", { ...loyalty, tagline: e.target.value })} className={`${fieldClass} flex-1`} />{fontSettingsBtn("loyalty", "tagline", loyalty.tagline || "")}</div>
           </div>
         </div>
         <label className={labelClass}>Описание программы</label>
-        <textarea value={loyalty.description || ""} onChange={e => update("loyalty", { ...loyalty, description: e.target.value })} rows={3} className={`${fieldClass} resize-none`} />
+        <div className="flex gap-2"><textarea value={loyalty.description || ""} onChange={e => update("loyalty", { ...loyalty, description: e.target.value })} rows={3} className={`${fieldClass} resize-none flex-1`} />{fontSettingsBtn("loyalty", "description", loyalty.description || "")}</div>
+      </div>
+
+      {/* Ticker */}
+      <div className={sectionClass}>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-white font-bold uppercase tracking-widest text-sm">Бегущая строка</h3>
+          {saveBtn("ticker")}
+        </div>
+        <p className="text-gray-500 text-xs mb-4">Тексты, которые бегут сверху сайта. Можно добавлять, удалять и редактировать.</p>
+        {(ticker as string[]).map((text, i) => (
+          <div key={i} className="flex gap-2 mb-2">
+            <input value={text} onChange={e => {
+              const next = [...ticker]; next[i] = e.target.value; update("ticker", next);
+            }} placeholder="Текст строки" className={`${fieldClass} flex-1`} />
+            <button onClick={() => update("ticker", ticker.filter((_: any, j: number) => j !== i))}
+              className="px-3 text-red-400 border border-red-500/30 hover:bg-red-500/10 text-xs">✕</button>
+          </div>
+        ))}
+        <button onClick={() => update("ticker", [...ticker, "Новый текст"])}
+          className="text-xs text-lime border border-lime/30 px-3 py-2 hover:bg-lime/10 uppercase tracking-widest">+ Добавить строку</button>
       </div>
 
       {/* Footer */}
@@ -664,9 +783,9 @@ function SettingsTab() {
           {saveBtn("footer")}
         </div>
         <label className={labelClass}>Слоган</label>
-        <input value={footer.tagline || ""} onChange={e => update("footer", { ...footer, tagline: e.target.value })} className={`${fieldClass} mb-3`} />
+        <div className="flex gap-2"><input value={footer.tagline || ""} onChange={e => update("footer", { ...footer, tagline: e.target.value })} className={`${fieldClass} mb-3 flex-1`} />{fontSettingsBtn("footer", "tagline", footer.tagline || "")}</div>
         <label className={labelClass}>Копирайт</label>
-        <input value={footer.copyright || ""} onChange={e => update("footer", { ...footer, copyright: e.target.value })} placeholder="© ГРИЗЛИ Hookah Lounge" className={fieldClass} />
+        <div className="flex gap-2"><input value={footer.copyright || ""} onChange={e => update("footer", { ...footer, copyright: e.target.value })} placeholder="© ГРИЗЛИ Hookah Lounge" className={`${fieldClass} flex-1`} />{fontSettingsBtn("footer", "copyright", footer.copyright || "")}</div>
       </div>
 
       {/* Images — per-slot photo overrides */}
@@ -723,26 +842,147 @@ function SettingsTab() {
         {(rules as Array<{ title: string; text: string }>).map((row, i) => (
           <div key={i} className="border border-white/5 p-3 mb-2">
             <div className="flex gap-2 mb-2">
-              <input value={row.title} onChange={e => {
-                const next = [...rules]; next[i] = { ...row, title: e.target.value }; update("rules", next);
-              }} placeholder="Заголовок" className={fieldClass} />
+              <div className="flex gap-2 flex-1"><input value={row.title} onChange={e => { const next = [...rules]; next[i] = { ...row, title: e.target.value }; update("rules", next); }} placeholder="Заголовок" className={`${fieldClass} flex-1`} />{fontSettingsBtn("rules", `${i}.title`, row.title)}</div>
               <button onClick={() => update("rules", rules.filter((_: any, j: number) => j !== i))}
                 className="px-3 text-red-400 border border-red-500/30 hover:bg-red-500/10 text-xs">✕</button>
             </div>
-            <textarea value={row.text} onChange={e => {
-              const next = [...rules]; next[i] = { ...row, text: e.target.value }; update("rules", next);
-            }} rows={2} placeholder="Текст правила" className={`${fieldClass} resize-none`} />
+            <div className="flex gap-2"><textarea value={row.text} onChange={e => { const next = [...rules]; next[i] = { ...row, text: e.target.value }; update("rules", next); }} rows={2} placeholder="Текст правила" className={`${fieldClass} resize-none flex-1`} />{fontSettingsBtn("rules", `${i}.text`, row.text)}</div>
           </div>
         ))}
         <button onClick={() => update("rules", [...rules, { title: "", text: "" }])}
           className="text-xs text-lime border border-lime/30 px-3 py-2 hover:bg-lime/10 uppercase tracking-widest">+ Правило</button>
       </div>
+
+      {/* Модальное окно настроек шрифта */}
+      {fontModal && (
+        <div className="fixed inset-0 bg-black/80 z-[9999] flex items-center justify-center p-4" onClick={() => setFontModal(null)}>
+          <div className="bg-neutral-950 border border-white/10 p-6 max-w-md w-full max-h-[85vh] overflow-y-auto rounded-lg" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-white font-bold uppercase tracking-widest text-sm">Настройки шрифта</h3>
+              <button onClick={() => setFontModal(null)} className="text-gray-500 hover:text-white text-xl">✕</button>
+            </div>
+            
+            <div className="mb-4">
+              <label className="text-xs text-gray-500 uppercase tracking-widest mb-2 block">Текущий текст</label>
+              <div className="bg-neutral-900 border border-white/10 p-3 rounded text-white text-sm break-words">
+                {fontModal.value || '(пусто)'}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs text-gray-500 uppercase tracking-widest">Размер на ПК</label>
+                  <span className="text-xs text-lime font-mono">{fontSettings.desktopSize}px</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="12" 
+                  max="300" 
+                  value={fontSettings.desktopSize}
+                  onChange={e => setFontSettings({...fontSettings, desktopSize: Number(e.target.value)})}
+                  className="w-full h-2 bg-neutral-900 rounded-lg appearance-none cursor-pointer accent-lime"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs text-gray-500 uppercase tracking-widest">Размер на телефоне</label>
+                  <span className="text-xs text-lime font-mono">{fontSettings.mobileSize}px</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="10" 
+                  max="80" 
+                  value={fontSettings.mobileSize}
+                  onChange={e => setFontSettings({...fontSettings, mobileSize: Number(e.target.value)})}
+                  className="w-full h-2 bg-neutral-900 rounded-lg appearance-none cursor-pointer accent-lime"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-gray-500 uppercase tracking-widest mb-2 block">Шрифт</label>
+                <select 
+                  value={fontSettings.font}
+                  onChange={e => setFontSettings({...fontSettings, font: e.target.value})}
+                  className="w-full bg-neutral-900 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:border-lime rounded"
+                >
+                  <option value="sans-serif">Без засечек (по умолчанию)</option>
+                  <option value="serif">С засечками</option>
+                  <option value="monospace">Моноширинный</option>
+                  <option value="cursive">Курсивный</option>
+                  <option value="fantasy">Декоративный</option>
+                  <option value="Arial">Arial</option>
+                  <option value="Georgia">Georgia</option>
+                  <option value="Times New Roman">Times New Roman</option>
+                  <option value="Courier New">Courier New</option>
+                  <option value="Verdana">Verdana</option>
+                  <option value="Impact">Impact</option>
+                </select>
+              </div>
+
+              <div>
+                <button 
+                  onClick={() => setShowDesktopPreview(!showDesktopPreview)}
+                  className="w-full text-xs text-gray-400 hover:text-lime uppercase tracking-widest py-2 border border-white/10 rounded mb-2 flex items-center justify-center gap-2"
+                >
+                  💻 {showDesktopPreview ? 'Скрыть превью для ПК' : 'Показать превью для ПК'}
+                  <span>{showDesktopPreview ? '▲' : '▼'}</span>
+                </button>
+                {showDesktopPreview && (
+                  <div className="p-3 bg-neutral-900 border border-white/10 rounded">
+                    <div className="text-xs text-gray-500 uppercase tracking-widest mb-2">Превью (ПК)</div>
+                    <div 
+                      style={{ 
+                        fontSize: `${fontSettings.desktopSize}px`,
+                        fontFamily: fontSettings.font
+                      }}
+                      className="text-white break-words leading-tight max-h-32 overflow-y-auto"
+                    >
+                      {fontModal.value || 'Пример текста'}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-4 bg-neutral-900 border border-white/10 rounded">
+                <div className="text-xs text-gray-500 uppercase tracking-widest mb-2">Превью (телефон)</div>
+                <div 
+                  style={{ 
+                    fontSize: `${fontSettings.mobileSize}px`,
+                    fontFamily: fontSettings.font
+                  }}
+                  className="text-white break-words leading-tight"
+                >
+                  {fontModal.value || 'Пример текста'}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button 
+                onClick={applyFontSettings}
+                className="flex-1 bg-lime text-black font-bold uppercase tracking-widest py-3 text-xs hover:bg-lime/80 rounded"
+              >
+                Применить
+              </button>
+              <button 
+                onClick={() => setFontModal(null)}
+                className="px-6 py-3 border border-white/10 text-gray-400 text-xs uppercase tracking-widest hover:bg-white/5 rounded"
+              >
+                Отмена
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
 
 // ── Menu CMS tab ──────────────────────────────────────────────────────────────
-type MenuItem = { id: number; section: string; category: string; name: string; description: string; price: string; sortOrder: number; isActive: number };
+type MenuItem = { id: number; section: string; category: string; name: string; description: string; price: string; sortOrder: number; isActive: number; isFeatured: number; strength?: number; sessionDuration?: number; bowl?: string; coal?: string; tobaccoBrand?: string; tobaccoFlavor?: string; hookahModel?: string; priceFeatured?: string; descriptionFeatured?: string };
 
 function MenuCmsTab() {
   const [items, setItems] = useState<MenuItem[]>([]);
@@ -758,17 +998,30 @@ function MenuCmsTab() {
   useEffect(() => { load(); }, []);
 
   const save = async (item: Partial<MenuItem>) => {
-    if (item.id) {
-      await adminFetch(`${API_BASE}/menu/${item.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(item) });
-    } else {
-      await adminFetch(`${API_BASE}/menu`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(item) });
+    console.log('Saving item:', item);
+    try {
+      let response;
+      if (item.id) {
+        response = await adminFetch(`${API_BASE}/menu/${item.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(item) });
+      } else {
+        response = await adminFetch(`${API_BASE}/menu`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(item) });
+      }
+      if (!response.ok) {
+        const error = await response.json();
+        showNiceAlert('Не удалось сохранить данные', true);
+        return;
+      }
+      setEdit(null); setAdding(null); load();
+      showNiceAlert(item.id ? 'Позиция обновлена' : 'Позиция добавлена');
+    } catch (err) {
+      showNiceAlert('Произошла ошибка при сохранении', true);
     }
-    setEdit(null); setAdding(null); load();
   };
 
   const del = async (id: number) => {
     if (!confirm("Удалить позицию?")) return;
     await adminFetch(`${API_BASE}/menu/${id}`, { method: "DELETE" });
+    showNiceAlert('Позиция удалена');
     load();
   };
 
@@ -796,7 +1049,7 @@ function MenuCmsTab() {
       }).then(r => { if (!r.ok) throw new Error(String(r.status)); return r; }))
     );
     const failed = results.filter(r => r.status === "rejected").length;
-    if (failed) alert(`${label}: ${affected.length - failed} из ${affected.length} обновлены, ${failed} с ошибкой.`);
+    if (failed) showNiceAlert('Часть позиций не обновилась', true);
     load();
   };
   const renameSection = async (oldName: string) => {
@@ -814,7 +1067,7 @@ function MenuCmsTab() {
     id: 0,
     section: adding.section ?? allSections[0] ?? "Кальяны",
     category: adding.category ?? "",
-    name: "", description: "", price: "", sortOrder: 0, isActive: 1,
+    name: "", description: "", price: "", sortOrder: 0, isActive: 1, isFeatured: 0,
   } as MenuItem : null);
   const fieldClass = "w-full bg-neutral-900 border border-white/10 px-3 py-2 text-white text-sm focus:outline-none focus:border-lime";
 
@@ -871,8 +1124,8 @@ function MenuCmsTab() {
       )}
 
       {editing && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => { setEdit(null); setAdding(null); }}>
-          <div className="bg-neutral-950 border border-white/10 p-6 max-w-lg w-full space-y-3" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="bg-neutral-950 border border-white/10 p-6 max-w-lg w-full max-h-[85vh] overflow-y-auto space-y-3">
             <h3 className="text-white font-bold uppercase tracking-widest text-sm mb-4">{editing.id ? "Редактировать" : "Новая позиция"}</h3>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -907,6 +1160,106 @@ function MenuCmsTab() {
                 Активна
               </label>
             </div>
+            {(/кальян/i.test(editing.section) || /кальян/i.test(editing.category) || /hookah/i.test(editing.section) || /hookah/i.test(editing.category)) && (
+              <div onClick={e => e.stopPropagation()} className="p-4 border border-lime/30 rounded bg-lime/5 space-y-3">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={!!editing.isFeatured} 
+                    onChange={e => { setEdit({ ...editing, isFeatured: e.target.checked ? 1 : 0 }); }}
+                    onClick={e => e.stopPropagation()}
+                    className="w-5 h-5 accent-lime"
+                  />
+                  <span className="text-lime text-sm font-bold uppercase tracking-wider">
+                    Сделать "Кальяном недели" (показать на главной)
+                  </span>
+                </label>
+                {editing.isFeatured === 1 && (
+                  <div className="space-y-2 pt-2 border-t border-lime/20">
+                    <p className="text-lime text-xs uppercase tracking-widest">Дополнительные поля для кальяна недели:</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-gray-400 text-xs">Крепость (1-10)</label>
+                        <input 
+                          type="number" 
+                          min="1" 
+                          max="10"
+                          value={editing.strength || 4} 
+                          onChange={e => setEdit({ ...editing, strength: Number(e.target.value) })}
+                          className={fieldClass}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-gray-400 text-xs">Время сессии (мин)</label>
+                        <input 
+                          type="number" 
+                          value={editing.sessionDuration || 120} 
+                          onChange={e => setEdit({ ...editing, sessionDuration: Number(e.target.value) })}
+                          className={fieldClass}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-gray-400 text-xs">Чаша</label>
+                      <input 
+                        value={editing.bowl || "Phunnel · Glaze"} 
+                        onChange={e => setEdit({ ...editing, bowl: e.target.value })}
+                        className={fieldClass}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-gray-400 text-xs">Уголь</label>
+                      <input 
+                        value={editing.coal || ""} 
+                        onChange={e => setEdit({ ...editing, coal: e.target.value })}
+                        className={fieldClass}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-gray-400 text-xs">Бренд табака</label>
+                      <input 
+                        value={editing.tobaccoBrand || ""} 
+                        onChange={e => setEdit({ ...editing, tobaccoBrand: e.target.value })}
+                        className={fieldClass}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-gray-400 text-xs">Вкус табака</label>
+                      <input 
+                        value={editing.tobaccoFlavor || ""} 
+                        onChange={e => setEdit({ ...editing, tobaccoFlavor: e.target.value })}
+                        className={fieldClass}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-gray-400 text-xs">Модель кальяна</label>
+                      <input 
+                        value={editing.hookahModel || ""} 
+                        onChange={e => setEdit({ ...editing, hookahModel: e.target.value })}
+                        className={fieldClass}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-gray-400 text-xs">Цена (для кальяна недели)</label>
+                      <input 
+                        value={editing.priceFeatured || ""} 
+                        onChange={e => setEdit({ ...editing, priceFeatured: e.target.value })}
+                        className={fieldClass}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-gray-400 text-xs">Описание (для кальяна недели)</label>
+                      <textarea 
+                        value={editing.descriptionFeatured || ""} 
+                        onChange={e => setEdit({ ...editing, descriptionFeatured: e.target.value })}
+                        className={fieldClass}
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
             <div className="flex gap-2 pt-4">
               <button onClick={() => save(editing)} className="flex-1 bg-lime text-black font-bold uppercase tracking-widest py-2 text-xs hover:bg-lime/80">
                 Сохранить
@@ -1042,8 +1395,21 @@ function ReviewsTab() {
 }
 
 // ── Admin panel shell ─────────────────────────────────────────────────────────
+function CategoriesTab() {
+  return (
+    <div>
+      <h2 className="text-2xl font-black mb-6">Категории меню</h2>
+      <iframe 
+        src="https://grizzly-lounge.qmbox.ru/admin/menu-categories" 
+        className="w-full h-[800px] border border-white/10 rounded-lg"
+        title="Управление категориями"
+      />
+    </div>
+  );
+}
+
 function AdminPanel() {
-  const [tab, setTab] = useState<"bookings" | "stats" | "heatmap" | "tables" | "settings" | "menu" | "gallery" | "reviews">("bookings");
+  const [tab, setTab] = useState<"bookings" | "stats" | "heatmap" | "tables" | "settings" | "menu" | "gallery" | "reviews" | "system" | "categories">("bookings");
   const TABS = [
     { key: "bookings", label: "Брони" },
     { key: "stats",    label: "Статистика" },
@@ -1051,8 +1417,10 @@ function AdminPanel() {
     { key: "tables",   label: "QR столов" },
     { key: "settings", label: "Контент" },
     { key: "menu",     label: "Меню" },
+    { key: "categories", label: "Категории" },
     { key: "gallery",  label: "Галерея" },
     { key: "reviews",  label: "Отзывы" },
+    { key: "system",   label: "Система" },
   ] as const;
   return (
     <div className="min-h-screen bg-black text-white">
@@ -1071,15 +1439,17 @@ function AdminPanel() {
         </div>
       </header>
       <div className="max-w-6xl mx-auto px-4 py-8">
-        {tab === "bookings" && <BookingsTab />}
-        {tab === "stats" && <StatsTab />}
-        {tab === "heatmap" && <HeatmapTab />}
-        {tab === "tables" && <TablesTab />}
-        {tab === "settings" && <SettingsTab />}
-        {tab === "menu" && <MenuCmsTab />}
-        {tab === "gallery" && <GalleryTab />}
-        {tab === "reviews" && <ReviewsTab />}
-      </div>
+      <div style={{ display: tab === "bookings" ? "block" : "none" }}><BookingsTab /></div>
+      <div style={{ display: tab === "stats" ? "block" : "none" }}><StatsTab /></div>
+      <div style={{ display: tab === "heatmap" ? "block" : "none" }}><HeatmapTab /></div>
+      <div style={{ display: tab === "tables" ? "block" : "none" }}><TablesTab /></div>
+      <div style={{ display: tab === "settings" ? "block" : "none" }}><SettingsTab /></div>
+      <div style={{ display: tab === "menu" ? "block" : "none" }}><MenuCmsTab /></div>
+      <div style={{ display: tab === "categories" ? "block" : "none" }}><CategoriesTab /></div>
+      <div style={{ display: tab === "gallery" ? "block" : "none" }}><GalleryTab /></div>
+      <div style={{ display: tab === "reviews" ? "block" : "none" }}><ReviewsTab /></div>
+      <div style={{ display: tab === "system" ? "block" : "none" }}><SystemTab /></div>
+    </div>
     </div>
   );
 }
@@ -1095,3 +1465,201 @@ export default function App() {
     </WouterRouter>
   );
 }
+
+
+// --- Вкладка Система v2 ---
+function SystemTab() {
+  const [status, setStatus] = useState<any>(null);
+  const [stats, setStats] = useState<any>(null);
+  const [logs, setLogs] = useState("");
+  const [showLogs, setShowLogs] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const loadData = async () => {
+    try {
+      const [statusRes, statsRes] = await Promise.all([
+      ]);
+      setStatus(statusRes);
+      setStats(statsRes);
+    } catch (e) { console.error('Ошибка загрузки:', e); }
+  };
+
+  const loadWebsite = async () => {
+    try {
+      const res = await adminFetch(`${API_BASE}/system/website`);
+      const data = await res.json();
+      setStatus(prev => ({ ...prev, website: data }));
+    } catch (e) { console.error('Ошибка проверки сайта:', e); }
+  };
+
+  const loadLogs = async () => {
+    try {
+      const res = await adminFetch(`${API_BASE}/system/logs`);
+      const data = await res.json();
+      setLogs(data.logs || '');
+      setShowLogs(true);
+    } catch (e) {
+      console.error('Ошибка загрузки логов:', e);
+    }
+  };
+
+  const restartService = async (service: string) => {
+    if (!confirm(`Перезапустить ${service === 'all' ? 'все сервисы' : service}?`)) return;
+    setLoading(true);
+    try {
+      const res = await adminFetch(`${API_BASE}/system/restart/${service}`, { method: "POST" });
+      const data = await res.json();
+      showNiceAlert(data.message || 'Перезапуск запущен');
+      setTimeout(loadData, 3000);
+    } catch (e) {
+      showNiceAlert('Не удалось перезапустить сервис', true);;
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadData();
+    const interval = setInterval(loadData, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const StatusIndicator = ({ ok, label }: { ok: boolean; label: string }) => (
+    <div className="bg-neutral-900 border border-white/10 p-4 rounded flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <div className={`w-3 h-3 rounded-full ${ok ? 'bg-green-500' : 'bg-red-500'}`}></div>
+        <span className="text-white text-sm font-medium">{label}</span>
+      </div>
+      <span className={`text-xs font-mono ${ok ? 'text-green-500' : 'text-red-500'}`}>
+        {ok ? 'РАБОТАЕТ' : 'ОШИБКА'}
+      </span>
+    </div>
+  );
+
+  const ProgressBar = ({ label, used, total, percent, unit }: any) => (
+    <div className="bg-neutral-900 border border-white/10 p-4 rounded">
+      <div className="flex justify-between items-center mb-2">
+        <span className="text-gray-400 text-xs uppercase">{label}</span>
+        <span className="text-lime text-sm font-mono">{percent}%</span>
+      </div>
+      <div className="w-full bg-neutral-800 rounded-full h-2 mb-2">
+        <div 
+          className={`h-2 rounded-full ${percent > 80 ? 'bg-red-500' : percent > 60 ? 'bg-yellow-500' : 'bg-lime'}`}
+          style={{ width: `${percent}%` }}
+        ></div>
+      </div>
+      <div className="text-gray-500 text-xs">
+        {used} / {total} {unit}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      <h2 className="text-white font-bold uppercase tracking-widest text-sm mb-6">Система — Управление сервером</h2>
+      
+      {/* Статусы сервисов */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatusIndicator ok={status?.nginx} label="Nginx" />
+        <StatusIndicator ok={status?.api} label="API" />
+        <StatusIndicator ok={status?.postgres} label="PostgreSQL" />
+        <StatusIndicator ok={status?.website?.ok} label="Сайт" />
+      </div>
+
+      {/* Ресурсы сервера */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {stats && (
+          <>
+            <ProgressBar 
+              label="RAM" 
+              used={stats.memory.used} 
+              total={stats.memory.total} 
+              percent={stats.memory.percent} 
+              unit="MB" 
+            />
+            <ProgressBar 
+              label="Диск" 
+              used={stats.disk.used} 
+              total={stats.disk.total} 
+              percent={stats.disk.percent} 
+              unit="GB" 
+            />
+            <div className="bg-neutral-900 border border-white/10 p-4 rounded">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-gray-400 text-xs uppercase">CPU</span>
+                <span className="text-lime text-sm font-mono">{(stats.cpu * 100).toFixed(0)}%</span>
+              </div>
+              <div className="w-full bg-neutral-800 rounded-full h-2">
+                <div 
+                  className={`h-2 rounded-full ${stats.cpu > 2 ? 'bg-red-500' : stats.cpu > 1 ? 'bg-yellow-500' : 'bg-lime'}`}
+                  style={{ width: `${Math.min(stats.cpu * 100, 100)}%` }}
+                ></div>
+              </div>
+              <div className="text-gray-500 text-xs mt-2">
+                Нагрузка: {stats.cpu}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Быстрые действия */}
+      <div className="bg-neutral-900 border border-white/10 p-6 rounded">
+        <div className="text-white font-bold uppercase tracking-widest text-sm mb-4">Быстрые действия</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <button 
+            onClick={() => restartService('nginx')}
+            disabled={loading}
+            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold uppercase tracking-widest py-3 px-4 rounded text-xs transition-colors"
+          >
+            Nginx
+          </button>
+          <button 
+            onClick={() => restartService('api')}
+            disabled={loading}
+            className="bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-bold uppercase tracking-widest py-3 px-4 rounded text-xs transition-colors"
+          >
+            API
+          </button>
+          <button 
+            onClick={loadLogs}
+            className="bg-gray-600 hover:bg-gray-700 text-white font-bold uppercase tracking-widest py-3 px-4 rounded text-xs transition-colors"
+          >
+            Логи
+          </button>
+          <button 
+            onClick={() => restartService('all')}
+            disabled={loading}
+            className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-bold uppercase tracking-widest py-3 px-4 rounded text-xs transition-colors"
+          >
+            ВСЁ
+          </button>
+        </div>
+      </div>
+
+      {/* Модальное окно логов */}
+      {showLogs && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setShowLogs(false)}>
+          <div className="bg-neutral-950 border border-white/10 p-6 max-w-4xl w-full max-h-[80vh] overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-white font-bold uppercase tracking-widest text-sm">Логи API сервера</h3>
+              <button onClick={() => setShowLogs(false)} className="text-gray-500 hover:text-white text-2xl">×</button>
+            </div>
+            <pre className="bg-black border border-white/10 p-4 rounded text-lime text-xs font-mono overflow-auto max-h-[60vh]">
+              {logs}
+            </pre>
+          </div>
+        </div>
+      )}
+
+      {/* Кнопка обновления */}
+      <button 
+        onClick={loadData}
+        disabled={loading}
+        className="bg-lime/10 hover:bg-lime/20 disabled:opacity-50 text-lime border border-lime/30 px-4 py-2 rounded text-xs uppercase tracking-widest transition-all font-bold"
+      >
+        {loading ? 'Загрузка...' : 'Обновить статистику'}
+      </button>
+    </div>
+  );
+}
+

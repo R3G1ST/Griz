@@ -55,6 +55,13 @@ export default defineConfig({
   },
   root: path.resolve(import.meta.dirname),
   build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom'],
+        },
+      },
+    },
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
   },

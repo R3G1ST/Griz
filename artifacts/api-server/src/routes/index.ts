@@ -6,6 +6,8 @@ import slotsRouter from "./slots";
 import reviewsRouter from "./reviews";
 import loyaltyRouter from "./loyalty";
 import siteRouter from "./site";
+import menuCategoriesRouter from "./menu-categories";
+import uploadCategoryImageRouter from "./upload-category-image";
 
 const router: IRouter = Router();
 
@@ -16,5 +18,7 @@ router.use(slotsRouter);
 router.use(reviewsRouter);
 router.use(loyaltyRouter);
 router.use(siteRouter);
+router.use(menuCategoriesRouter);
+router.use(uploadCategoryImageRouter);
 
 export default router;

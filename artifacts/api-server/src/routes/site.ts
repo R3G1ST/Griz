@@ -1,3 +1,4 @@
+import { exec } from "child_process";
 import { Router, type IRouter, type Request, type Response } from "express";
 import { db, siteSettingsTable, menuItemsTable, galleryImagesTable, reviewsTable } from "@workspace/db";
 import { eq, asc } from "drizzle-orm";
@@ -50,24 +51,46 @@ router.get("/menu", async (_req: Request, res: Response) => {
 });
 
 router.post("/menu", requireAdmin, async (req: Request, res: Response) => {
+  console.log('POST /menu received body:', JSON.stringify(req.body));
   try {
-    const { section, category, name, description = "", price, sortOrder = 0, isActive = 1 } = req.body ?? {};
+    const { section, category, name, description = "", price, sortOrder = 0, isActive = 1, isFeatured = 0, strength = 4, sessionDuration = 120, bowl = "Phunnel · Glaze", coal = "Coco · 25mm" } = req.body ?? {};
     if (!section || !category || !name || !price) {
       res.status(400).json({ error: "Заполните section, category, name, price" });
       return;
     }
     const [item] = await db.insert(menuItemsTable)
-      .values({ section, category, name, description, price, sortOrder, isActive: isActive ? 1 : 0 }).returning();
+      .values({ section, category, name, description, price, sortOrder, isActive: isActive ? 1 : 0, isFeatured: isFeatured ? 1 : 0, strength, sessionDuration, bowl, coal }).returning();
     res.status(201).json(item);
   } catch { res.status(500).json({ error: "Ошибка сервера" }); }
 });
 
 router.put("/menu/:id", requireAdmin, async (req: Request, res: Response) => {
+  console.log('PUT /menu/:id received body:', JSON.stringify(req.body));
   try {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) { res.status(400).json({ error: "bad id" }); return; }
     const b = req.body ?? {};
     const updates: Record<string, unknown> = {};
+    
+    // Сохраняем isFeatured - может прийти как boolean или число
+    if (b.isFeatured !== undefined) {
+      updates.isFeatured = (b.isFeatured === true || b.isFeatured === 1) ? 1 : 0;
+      console.log('isFeatured received:', b.isFeatured, '-> setting to:', updates.isFeatured);
+    }
+    if (b.strength !== undefined) updates.strength = Number(b.strength);
+    if (b.sessionDuration !== undefined) updates.sessionDuration = Number(b.sessionDuration);
+    if (b.bowl !== undefined) updates.bowl = String(b.bowl);
+    if (b.coal !== undefined) updates.coal = String(b.coal);
+    if (b.tobaccoBrand !== undefined) updates.tobaccoBrand = String(b.tobaccoBrand);
+    if (b.tobaccoFlavor !== undefined) updates.tobaccoFlavor = String(b.tobaccoFlavor);
+    if (b.hookahModel !== undefined) updates.hookahModel = String(b.hookahModel);
+    if (b.priceFeatured !== undefined) updates.priceFeatured = String(b.priceFeatured);
+    if (b.descriptionFeatured !== undefined) updates.descriptionFeatured = String(b.descriptionFeatured);
+    if (b.tobaccoBrand !== undefined) updates.tobaccoBrand = String(b.tobaccoBrand);
+    if (b.tobaccoFlavor !== undefined) updates.tobaccoFlavor = String(b.tobaccoFlavor);
+    if (b.hookahModel !== undefined) updates.hookahModel = String(b.hookahModel);
+    if (b.priceFeatured !== undefined) updates.priceFeatured = String(b.priceFeatured);
+    if (b.descriptionFeatured !== undefined) updates.descriptionFeatured = String(b.descriptionFeatured);
 
     // String fields: trim, enforce non-empty + length limits to prevent invalid persisted state
     for (const k of ["section", "category", "name", "price"] as const) {
@@ -91,7 +114,9 @@ router.put("/menu/:id", requireAdmin, async (req: Request, res: Response) => {
     if ("isActive" in b) updates.isActive = b.isActive ? 1 : 0;
 
     if (Object.keys(updates).length === 0) { res.status(400).json({ error: "no fields" }); return; }
+    console.log('Saving updates for id', id, ':', JSON.stringify(updates));
     const [item] = await db.update(menuItemsTable).set(updates).where(eq(menuItemsTable.id, id)).returning();
+    console.log('Saved item:', JSON.stringify(item));
     res.json(item);
   } catch { res.status(500).json({ error: "Ошибка сервера" }); }
 });
@@ -161,3 +186,187 @@ router.patch("/reviews/:id", requireAdmin, async (req: Request, res: Response) =
 });
 
 export default router;
+
+// --- Управление системой ---
+router.get("/system/status", requireAdmin, async (_req: Request, res: Response) => {
+  try {
+    const { execSync } = require("child_process");
+    
+    // Проверяем сервисы
+    const checkService = (name: string) => {
+      try {
+        const result = execSync(`systemctl is-active ${name} 2>/dev/null`).toString().trim();
+        return result === "active";
+      } catch { return false; }
+    };
+    
+    // Проверяем сайт (внешний запрос)
+    const checkWebsite = () => {
+      try {
+        const result = execSync('curl -s -o /dev/null -w "%{http_code}" --max-time 3 https://grizzly-lounge.qmbox.ru').toString().trim();
+        return { status: result, ok: result === "200" };
+      } catch { return { status: "error", ok: false }; }
+    };
+    
+    // Проверяем API (просто по процессу, без curl)
+    const checkAPI = () => {
+      try {
+        const result = execSync('pgrep -f "api-server"').toString().trim();
+        return result.length > 0;
+      } catch { return false; }
+    };
+    
+    res.json({
+      nginx: checkService("nginx"),
+      api: checkAPI(),
+      postgres: checkService("postgresql"),
+      website: checkWebsite(),
+      timestamp: Date.now()
+    });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+router.get("/system/stats", requireAdmin, async (_req: Request, res: Response) => {
+  try {
+    const { execSync } = require("child_process");
+    
+    // RAM
+    const memInfo = execSync("free -m").toString();
+    const memMatch = memInfo.match(/Mem:\s+(\d+)\s+(\d+)\s+/);
+    const memTotal = memMatch ? parseInt(memMatch[1]) : 0;
+    const memUsed = memMatch ? parseInt(memMatch[2]) : 0;
+    const memPercent = memTotal > 0 ? Math.round((memUsed / memTotal) * 100) : 0;
+    
+    // Диск
+    const diskInfo = execSync("df -h / | tail -1").toString().trim().split(/\s+/);
+    const diskTotal = diskInfo[1] || "0";
+    const diskUsed = diskInfo[2] || "0";
+    const diskPercent = parseInt(diskInfo[4]) || 0;
+    
+    // CPU
+    const cpuLoad = execSync("cat /proc/loadavg").toString().trim().split(" ")[0];
+    
+    res.json({
+      memory: { total: memTotal, used: memUsed, percent: memPercent },
+      disk: { total: diskTotal, used: diskUsed, percent: diskPercent },
+      cpu: parseFloat(cpuLoad),
+      timestamp: Date.now()
+    });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+router.post("/system/restart/:service", requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { service } = req.params;
+    const allowed = ["nginx", "api", "all"];
+    
+    if (!allowed.includes(service)) {
+      res.status(400).json({ error: "Недопустимый сервис" });
+      return;
+    }
+    
+    const { exec } = require("child_process");
+    
+    if (service === "nginx") {
+      exec("systemctl restart nginx");
+      res.json({ message: "Nginx перезапущен" });
+    } else if (service === "api") {
+      exec("pkill -f api-server && sleep 2 && cd /var/www/Griz && DATABASE_URL=postgresql://griz:griz_password_2024@localhost:5432/griz_db PORT=3000 nohup pnpm --filter @workspace/api-server run dev > /tmp/api-server.log 2>&1 &");
+      res.json({ message: "API перезапущен" });
+    } else if (service === "all") {
+      exec("nohup /var/www/Griz/scripts/restart-all.sh > /tmp/restart.log 2>&1 &");
+      res.json({ message: "Полный перезапуск инициирован" });
+    }
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+router.get("/system/logs", requireAdmin, async (_req: Request, res: Response) => {
+  try {
+    const { execSync } = require("child_process");
+    const logs = execSync("tail -100 /tmp/api-server.log").toString();
+    res.json({ logs });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+// --- Управление системой v4 (быстрое) ---
+const { exec } = require("child_process");
+const { promisify } = require("util");
+const execAsync = promisify(exec);
+
+router.get("/system/status", requireAdmin, async (_req: Request, res: Response) => {
+  try {
+    // Все проверки параллельно и асинхронно
+    const [nginxResult, apiResult, postgresResult] = await Promise.allSettled([
+      execAsync('systemctl is-active nginx 2>/dev/null'),
+      execAsync('pgrep -f "api-server"'),
+      execAsync('systemctl is-active postgresql 2>/dev/null')
+    ]);
+    
+    const nginx = nginxResult.status === 'fulfilled' && nginxResult.value.stdout.trim() === 'active';
+    const api = apiResult.status === 'fulfilled' && apiResult.value.stdout.trim().length > 0;
+    const postgres = postgresResult.status === 'fulfilled' && postgresResult.value.stdout.trim() === 'active';
+    
+    res.json({ nginx, api, postgres, timestamp: Date.now() });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+router.get("/system/website", requireAdmin, async (_req: Request, res: Response) => {
+  try {
+    const result = await execAsync('curl -s -o /dev/null -w "%{http_code}" --max-time 3 https://grizzly-lounge.qmbox.ru');
+    const status = result.stdout.trim();
+    res.json({ status, ok: status === "200" });
+  } catch { res.json({ status: "error", ok: false }); }
+});
+
+router.get("/system/stats", requireAdmin, async (_req: Request, res: Response) => {
+  try {
+    const { execSync } = require("child_process");
+    
+    const memInfo = execSync("free -m").toString();
+    const memMatch = memInfo.match(/Mem:\s+(\d+)\s+(\d+)\s+/);
+    const memTotal = memMatch ? parseInt(memMatch[1]) : 0;
+    const memUsed = memMatch ? parseInt(memMatch[2]) : 0;
+    const memPercent = memTotal > 0 ? Math.round((memUsed / memTotal) * 100) : 0;
+    
+    const diskInfo = execSync("df -h / | tail -1").toString().trim().split(/\s+/);
+    const diskTotal = diskInfo[1] || "0";
+    const diskUsed = diskInfo[2] || "0";
+    const diskPercent = parseInt(diskInfo[4]) || 0;
+    
+    const cpuLoad = execSync("cat /proc/loadavg").toString().trim().split(" ")[0];
+    
+    res.json({
+      memory: { total: memTotal, used: memUsed, percent: memPercent },
+      disk: { total: diskTotal, used: diskUsed, percent: diskPercent },
+      cpu: parseFloat(cpuLoad),
+      timestamp: Date.now()
+    });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+router.post("/system/restart/:service", requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { service } = req.params;
+    const allowed = ["nginx", "api", "all"];
+    if (!allowed.includes(service)) { res.status(400).json({ error: "Недопустимый сервис" }); return; }
+    
+    if (service === "nginx") {
+      exec("systemctl restart nginx");
+      res.json({ message: "Nginx перезапущен" });
+    } else if (service === "api") {
+      exec("systemctl restart grizli-api");
+      res.json({ message: "API перезапущен" });
+    } else if (service === "all") {
+      exec("nohup /var/www/Griz/scripts/restart-all.sh > /tmp/restart.log 2>&1 &");
+      res.json({ message: "Полный перезапуск инициирован" });
+    }
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});
+
+router.get("/system/logs", requireAdmin, async (_req: Request, res: Response) => {
+  try {
+    const { execSync } = require("child_process");
+    const logs = execSync("tail -100 /tmp/api-server.log").toString();
+    res.json({ logs });
+  } catch (e: any) { res.status(500).json({ error: e.message }); }
+});

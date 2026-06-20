@@ -352,7 +352,16 @@ html { scroll-behavior: smooth; }
 .gn-corner > .c2   { bottom: -1px; right: -1px; border-bottom-width: 1.5px; border-right-width: 1.5px; }
 
 @keyframes gn-marquee {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-33.3333%); }
 }
 .gn-marquee { animation: gn-marquee 38s linear infinite; }
+
+/* Скрываем скроллбар для горизонтального скролла */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

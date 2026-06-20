@@ -12,6 +12,7 @@ import Reviews from "@/pages/Reviews";
 import Loyalty from "@/pages/Loyalty";
 import LoyaltyCard from "@/pages/LoyaltyCard";
 import LoyaltyScanner from "@/pages/LoyaltyScanner";
+import MenuCategoriesAdmin from "@/pages/admin/MenuCategories";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ function Router() {
       <Route path="/card" component={Card} />
       <Route path="/loyalty/scan" component={LoyaltyScanner} />
       <Route path="/loyalty/:token" component={LoyaltyCard} />
+      <Route path="/admin/menu-categories" component={MenuCategoriesAdmin} />
       <Route component={NotFound} />
     </Switch>
   );
