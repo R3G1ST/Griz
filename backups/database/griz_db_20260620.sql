@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict QkAJor542L0TWqe5hJMbLaa2YcxEikvxC7exfRxgBVFDIy5ABlYzcTquMKgqMOz
+\restrict vViclnwijRvxbzxZTrxAHprr6nOiQHpnI79b1TKl2aCUsE9qR8py8Jgl73GqNmT
 
 -- Dumped from database version 18.4 (Ubuntu 18.4-0ubuntu0.26.04.1)
 -- Dumped by pg_dump version 18.4 (Ubuntu 18.4-0ubuntu0.26.04.1)
@@ -443,6 +443,8 @@ COPY public.menu_categories (id, key, label, emoji, image, display_order, is_act
 
 COPY public.menu_items (id, section, category, name, description, price, sort_order, is_active, created_at, is_featured, strength, session_duration, bowl, coal, tobacco_brand, tobacco_flavor, hookah_model, price_featured, description_featured, image, category_image, ingredients, allergens, calories, protein, fat, carbs, menu_category, status, is_visible) FROM stdin;
 61	Hookah	Premium	Premium	Все бренды категории Premium : Trofimoffs, Bonche, Dogma	1500	0	1	2026-06-14 18:07:43.73216	1	7	90	Darkside · killer	Coco 25	null	null	null	null	null	\N	\N	\N	\N	\N	\N	\N	\N	hookah	active	1
+91	Меню бар	Пиво	El Capulco	Б/а	165	0	1	2026-06-20 19:52:37.058455	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	active	1
+30	Меню бар	Напитки	Кола	Classic/zero	179	0	1	2026-06-14 17:14:15.231602	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	bar	active	1
 51	Чайная карта	Китайский чай	Жасминовый улун		415	0	1	2026-06-14 17:43:33.479218	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	tea	active	1
 52	Чайная карта	Китайский чай	Женьшень улун		415	0	1	2026-06-14 17:44:38.710285	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	tea	active	1
 53	Чайная карта	Китайский чай	Молочный улун		415	0	1	2026-06-14 17:44:58.82125	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	tea	active	1
@@ -455,20 +457,15 @@ COPY public.menu_items (id, section, category, name, description, price, sort_or
 26	Меню бар	Напитки	Вода	Газ/не газ	238	0	1	2026-06-14 17:09:31.916223	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	bar	active	1
 24	Меню бар	Напитки	Адреналин	Classic /Zero 	214	0	1	2026-06-14 17:08:09.51048	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	bar	active	1
 29	Меню бар	Напитки	Спрайт		142	0	1	2026-06-14 17:13:28.954955	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	bar	active	1
-30	Меню бар	Напитки	Кола 	Classic/zero	179	0	1	2026-06-14 17:14:15.231602	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	bar	active	1
-62	Меню бар	Пиво 	Kozel темн.		185	0	1	2026-06-19 11:38:14.170499	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	bar	active	1
 40	Меню бар	Лимонады	Прохладный вайб	0,4 /1л	269/487	0	1	2026-06-14 17:31:05.228599	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	bar	active	1
 41	Меню бар	Лимонады	CHERRY PUNCH	0,4/1л\nЛимонад с характером который <<Бьет по рецепторам >> так же мощно как басы в хорошем трек листе	269/487	0	1	2026-06-14 17:35:06.136903	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	bar	active	1
 42	Меню бар	Лимонады	Neon Purple drip	0,4/1л Лавандовый 	269/487	0	1	2026-06-14 17:37:19.515952	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	bar	active	1
 43	Меню бар	Лимонады	Chill Vibs	0,4/1л\nЧиловый малиновый лимонад со спокойной кислинкой в конце	269/487	0	1	2026-06-14 17:40:29.172019	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	bar	active	1
-88	Меню бар	Пиво	Stella Artois		187	0	1	2026-06-20 19:12:57.842301	0	4	120	Phunnel · Glaze	Coco · 25mm	null	null	null	null	null	\N	\N	\N	\N	\N	\N	\N	\N	bar	active	1
-83	Еда	Десерты	Чизкейк 	(Топпинг на выбор )	398	0	1	2026-06-19 12:10:57.268657	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	food	active	1
+62	Меню бар	Пиво	Kozel темн.		185	0	1	2026-06-19 11:38:14.170499	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	bar	active	1
+64	Меню бар	Пиво	Blanche		200	0	1	2026-06-19 11:42:32.718551	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	bar	active	1
 84	Еда	Десерты	Мороженое	3 шарика на выбор	398	0	1	2026-06-19 12:13:27.884591	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	food	active	1
 85	Еда	Допы 	Лимонная нарезка		60	0	1	2026-06-19 12:14:12.82765	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	food	active	1
 86	Еда	Допы 	Топпинг или сироп		60	0	1	2026-06-19 12:15:21.913138	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	food	active	1
-63	Меню бар	Пиво 	Bud 		199	0	1	2026-06-19 11:40:14.691976	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	bar	active	1
-64	Меню бар	Пиво 	Blanche		200	0	1	2026-06-19 11:42:32.718551	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	bar	active	1
-65	Меню бар	Пиво 	Честерс груша 	(Сидр)	239	0	1	2026-06-19 11:46:37.436931	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	bar	active	1
 66	Чайная карта	Обычный	Каркаде		315	0	1	2026-06-19 11:48:19.819943	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	tea	active	1
 67	Чайная карта	Обычный	Черный		315	0	1	2026-06-19 11:48:55.71415	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	tea	active	1
 68	Чайная карта	Обычный	Зеленый		315	0	1	2026-06-19 11:49:13.209299	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	tea	active	1
@@ -476,12 +473,19 @@ COPY public.menu_items (id, section, category, name, description, price, sort_or
 70	Чайная карта	Обычный	Эрл-грей	(С бергамотом )	315	0	1	2026-06-19 11:50:22.768572	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	tea	active	1
 71	Чайная карта	Обычный	Гречишный		315	0	1	2026-06-19 11:51:08.31207	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	tea	active	1
 72	Чайная карта	Обычный	Таежный		315	0	1	2026-06-19 11:51:30.065419	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	tea	active	1
-74	Чайная карта	Допы к чаю	Лимон 		30	0	1	2026-06-19 11:52:33.163122	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	tea	active	1
-75	Чайная карта	Допы к чаю	Чабрец 		30	0	1	2026-06-19 11:52:51.801081	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	tea	active	1
+92	Меню бар	Пиво	Blanche	Б/а	189	0	1	2026-06-20 19:53:34.449055	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	active	1
+63	Меню бар	Пиво	Bud		199	0	1	2026-06-19 11:40:14.691976	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	bar	active	1
+65	Меню бар	Пиво	Честерс груша	(Сидр)	239	0	1	2026-06-19 11:46:37.436931	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	bar	active	1
+83	Еда	Десерты	Чизкейк	(Топпинг на выбор )	398	0	1	2026-06-19 12:10:57.268657	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	food	active	1
+74	Чайная карта	Допы к чаю	Лимон		30	0	1	2026-06-19 11:52:33.163122	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	tea	active	1
+75	Чайная карта	Допы к чаю	Чабрец		30	0	1	2026-06-19 11:52:51.801081	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	tea	active	1
 76	Чайная карта	Допы к чаю	Мед		60	0	1	2026-06-19 11:53:44.587265	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	tea	active	1
-77	Чайная карта	Авторский	LiL Barry 	\nЯГОДНЫЙ ПОПСОВЫЙ МИКС	436	0	1	2026-06-19 11:58:55.607005	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	tea	active	1
 78	Чайная карта	Авторский	Claud Rap	нежный сливочный чай с лавандой черникой	435	0	1	2026-06-19 12:00:25.165359	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	tea	active	1
 79	Чайная карта	Авторский	Punchline	чай с неожиданном послевкусием обычный зеленый чай с острым послевкусием лемонграса и имбиря	435	0	1	2026-06-19 12:01:40.519075	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	tea	active	1
+89	Меню бар	Пиво	El Capulco		220	0	1	2026-06-20 19:49:35.75158	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	bar	active	1
+90	Меню бар	Пиво	Hoegaarden		210	0	0	2026-06-20 19:49:35.753985	0	4	120	Phunnel · Glaze	Coco · 25mm	null	null	null	null	null	\N	\N	\N	\N	\N	\N	\N	\N	bar	active	1
+77	Чайная карта	Авторский	LiL Barry	\nЯГОДНЫЙ ПОПСОВЫЙ МИКС	436	0	1	2026-06-19 11:58:55.607005	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	tea	active	1
+93	Меню бар	Пиво	Hoegaarden вишня		216	0	1	2026-06-20 19:54:20.691336	0	4	120	Phunnel · Glaze	Coco · 25mm	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	\N	active	1
 \.
 
 
@@ -551,7 +555,7 @@ SELECT pg_catalog.setval('public.menu_categories_id_seq', 4, true);
 -- Name: menu_items_id_seq; Type: SEQUENCE SET; Schema: public; Owner: griz
 --
 
-SELECT pg_catalog.setval('public.menu_items_id_seq', 88, true);
+SELECT pg_catalog.setval('public.menu_items_id_seq', 93, true);
 
 
 --
@@ -661,5 +665,5 @@ ALTER TABLE ONLY public.site_settings
 -- PostgreSQL database dump complete
 --
 
-\unrestrict QkAJor542L0TWqe5hJMbLaa2YcxEikvxC7exfRxgBVFDIy5ABlYzcTquMKgqMOz
+\unrestrict vViclnwijRvxbzxZTrxAHprr6nOiQHpnI79b1TKl2aCUsE9qR8py8Jgl73GqNmT
 
