@@ -137,6 +137,7 @@ router.put("/menu/:id", requireAdmin, async (req: Request, res: Response) => {
     if (b.menuCategory !== undefined) updates.menuCategory = String(b.menuCategory);
     if (b.status !== undefined) updates.status = String(b.status);
     if (b.isVisible !== undefined) updates.isVisible = Number(b.isVisible);
+    if (b.outOfStock !== undefined) updates.outOfStock = Number(b.outOfStock);
 
     // String fields: trim, enforce non-empty + length limits to prevent invalid persisted state
     for (const k of ["section", "category", "name", "price"] as const) {

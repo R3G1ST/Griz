@@ -1311,6 +1311,12 @@ function MenuCmsTab() {
                   <input type="checkbox" checked={!!edit.isActive} onChange={e => setEdit({ ...edit, isActive: e.target.checked ? 1 : 0 })} />
                 </label>
               </div>
+              <div>
+                <label className="text-gray-400 text-xs">Нет в наличии</label>
+                <label className="flex items-center gap-2 text-white text-sm mt-2">
+                  <input type="checkbox" checked={!!edit.outOfStock} onChange={e => setEdit({ ...edit, outOfStock: e.target.checked ? 1 : 0 })} />
+                </label>
+              </div>
             </div>
             
             {/* Кальян недели */}
