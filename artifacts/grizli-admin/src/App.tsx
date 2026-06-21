@@ -1138,7 +1138,7 @@ function MenuCmsTab() {
         </div>
       )}
 
-      {edit && (
+      {(edit || adding) && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
           <div className="bg-neutral-950 border border-white/10 p-6 max-w-2xl w-full max-h-[85vh] overflow-y-auto space-y-4">
             <h3 className="text-white font-bold uppercase tracking-widest text-sm mb-4">{edit.id ? "Редактировать" : "Новая позиция"}</h3>
