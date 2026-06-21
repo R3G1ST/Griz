@@ -95,6 +95,7 @@ router.post("/menu", requireAdmin, async (req: Request, res: Response) => {
     if (b.descriptionFeatured !== undefined) insertData.descriptionFeatured = String(b.descriptionFeatured);
     if (b.status !== undefined) insertData.status = String(b.status);
     if (b.isVisible !== undefined) insertData.isVisible = Number(b.isVisible);
+    if (b.outOfStock !== undefined) insertData.outOfStock = Number(b.outOfStock);
     
     const [item] = await db.insert(menuItemsTable).values(insertData).returning();
     res.status(201).json(item);
