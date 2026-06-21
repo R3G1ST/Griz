@@ -55,8 +55,18 @@ router.post("/menu", requireAdmin, async (req: Request, res: Response) => {
   try {
     const b = req.body ?? {};
     const { section, category, name, description = "", price, sortOrder = 0, isActive = 1, isFeatured = 0, strength = 4, sessionDuration = 120, bowl = "Phunnel · Glaze", coal = "Coco · 25mm" } = b;
-    if (!section || !category || !name || !price || !b.menuCategory) {
-      res.status(400).json({ error: "Заполните section, category, name, price и выберите главную категорию" });
+    const missingFields = [];
+    if (!section) missingFields.push('Секция');
+    if (!category) missingFields.push('Категория');
+    if (!name) missingFields.push('Название');
+    if (!price) missingFields.push('Цена');
+    if (!b.menuCategory) missingFields.push('Главная категория');
+    
+    if (missingFields.length > 0) {
+      res.status(400).json({ 
+        error: "Заполните обязательные поля",
+        missingFields: missingFields
+      });
       return;
     }
     

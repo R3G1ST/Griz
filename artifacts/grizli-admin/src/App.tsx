@@ -1130,9 +1130,9 @@ function MenuCmsTab() {
             
             {/* Секция */}
             <div>
-              <label className="text-gray-400 text-xs">Секция</label>
+              <label className="text-gray-400 text-xs">Секция <span className="text-red-500">*</span></label>
               <input list="sections-list" value={editing.section} onChange={e => setEdit({ ...editing, section: e.target.value })}
-                placeholder="Секция (Кальяны/Напитки/Закуски)" className={fieldClass} />
+                placeholder="Секция (Кальяны/Напитки/Закуски)" className={getFieldClass("Секция")} />
               <datalist id="sections-list">
                 {allSections.map(s => <option key={s} value={s} />)}
               </datalist>
@@ -1140,7 +1140,7 @@ function MenuCmsTab() {
             
             {/* Главная категория */}
             <div>
-              <label className="text-gray-400 text-xs">📂 Главная категория</label>
+              <label className="text-gray-400 text-xs">📂 Главная категория <span className="text-red-500">*</span></label>
               <select 
                 value={editing.menuCategory || ""} 
                 onChange={e => setEdit({ ...editing, menuCategory: e.target.value })}
@@ -1156,7 +1156,7 @@ function MenuCmsTab() {
             
             {/* Подкатегория */}
             <div>
-              <label className="text-gray-400 text-xs">Подкатегория</label>
+              <label className="text-gray-400 text-xs">Подкатегория <span className="text-red-500">*</span></label>
               <select 
                 value={editing.category} 
                 onChange={e => setEdit({ ...editing, category: e.target.value })}
@@ -1212,9 +1212,9 @@ function MenuCmsTab() {
             
             {/* Название */}
             <div>
-              <label className="text-gray-400 text-xs">Название</label>
+              <label className="text-gray-400 text-xs">Название <span className="text-red-500">*</span></label>
               <input value={editing.name} onChange={e => setEdit({ ...editing, name: e.target.value })}
-                placeholder="Название" className={fieldClass} />
+                placeholder="Название" className={getFieldClass("Название")} />
             </div>
             
             {/* Описание */}
@@ -1280,9 +1280,9 @@ function MenuCmsTab() {
             {/* Цена, порядок, активна */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
-                <label className="text-gray-400 text-xs">Цена</label>
+                <label className="text-gray-400 text-xs">Цена <span className="text-red-500">*</span></label>
                 <input value={editing.price} onChange={e => setEdit({ ...editing, price: e.target.value })}
-                  placeholder="650 ₽" className={fieldClass} />
+                  placeholder="650 ₽" className={getFieldClass("Цена")} />
               </div>
               <div>
                 <label className="text-gray-400 text-xs">Порядок</label>
