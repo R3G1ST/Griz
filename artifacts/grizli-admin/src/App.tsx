@@ -997,27 +997,14 @@ function MenuCmsTab() {
   const load = () => fetch(`${API_BASE}/menu`).then(r => r.json()).then(setItems);
   useEffect(() => { load(); }, []);
 
-  const isRequired = (fieldName: string) => validationErrors.includes(fieldName);
-  const getFieldClass = (fieldName: string) => isRequired(fieldName) ? `${fieldClass} border-red-500` : fieldClass;
-
   const save = async (item: Partial<MenuItem>) => {
     console.log('Saving item:', item);
     
-    // Валидация обязательных полей
-    const missingFields: string[] = [];
-    if (!item.section?.trim()) missingFields.push('Секция');
-    if (!item.category?.trim()) missingFields.push('Категория');
-    if (!item.name?.trim()) missingFields.push('Название');
-    if (!item.price?.trim()) missingFields.push('Цена');
-    if (!item.menuCategory) missingFields.push('Главная категория');
-    
-    if (missingFields.length > 0) {
-      toast.error(`Заполните обязательные поля: ${missingFields.join(', ')}`);
-      setValidationErrors(missingFields);
+    // Простая валидация обязательных полей
+    if (!item.section?.trim() || !item.category?.trim() || !item.name?.trim() || !item.price?.trim() || !item.menuCategory) {
+      En('⚠️ Заполните обязательные поля: Секция, Категория, Название, Цена, Главная категория', true);
       return;
     }
-    
-    setValidationErrors([]);
     
     try {
       let response;
@@ -1152,7 +1139,7 @@ function MenuCmsTab() {
             <div>
               <label className="text-gray-400 text-xs">Секция <span className="text-red-500">*</span></label>
               <input list="sections-list" value={editing.section} onChange={e => setEdit({ ...editing, section: e.target.value })}
-                placeholder="Секция (Кальяны/Напитки/Закуски)" className={getFieldClass("Секция")} />
+                placeholder="Секция (Кальяны/Напитки/Закуски)" className={fieldClass} />
               <datalist id="sections-list">
                 {allSections.map(s => <option key={s} value={s} />)}
               </datalist>
@@ -1176,7 +1163,7 @@ function MenuCmsTab() {
             
             {/* Подкатегория */}
             <div>
-              <label className="text-gray-400 text-xs">Подкатегория</label>
+              <label className="text-gray-400 text-xs">Подкатегория <span className="text-red-500">*</span></label>
               <select 
                 value={editing.category} 
                 onChange={e => setEdit({ ...editing, category: e.target.value })}
@@ -1234,7 +1221,7 @@ function MenuCmsTab() {
             <div>
               <label className="text-gray-400 text-xs">Название <span className="text-red-500">*</span></label>
               <input value={editing.name} onChange={e => setEdit({ ...editing, name: e.target.value })}
-                placeholder="Название" className={getFieldClass("Название")} />
+                placeholder="Название" className={fieldClass} />
             </div>
             
             {/* Описание */}
@@ -1298,7 +1285,7 @@ function MenuCmsTab() {
               <div>
                 <label className="text-gray-400 text-xs">Цена <span className="text-red-500">*</span></label>
                 <input value={editing.price} onChange={e => setEdit({ ...editing, price: e.target.value })}
-                  placeholder="650 ₽" className={getFieldClass("Цена")} />
+                  placeholder="650 ₽" className={fieldClass} />
               </div>
               <div>
                 <label className="text-gray-400 text-xs">Порядок</label>
