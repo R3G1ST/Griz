@@ -34,22 +34,22 @@ export function ProductCard({ item, onClose }: Props) {
         <div className="space-y-6">
           <div>
             <h2 className="gn-display text-4xl text-white uppercase">{item.name}</h2>
-            <p className="gn-mono text-2xl text-[#D4FF3F] mt-2">{item.outOfStock === 1 ? "Нет в наличии" : item.price}</p>
+            <p className="gn-mono text-2xl text-[#D4FF3F] mt-2">{(item.outOfStock === 1 || item.outOfStock === true) ? "Нет в наличии" : item.price}</p>
           </div>
 
           <p className="gn-mono text-base text-white/80 leading-relaxed">{item.description}</p>
 
-          {item.ingredients && (
+          {item.ingredients && item.ingredients !== 'null' ? item.ingredients : '' && (
             <div>
               <h3 className="gn-mono text-sm text-white/50 uppercase tracking-widest mb-2">Состав</h3>
-              <p className="gn-mono text-sm text-white/80">{item.ingredients}</p>
+              <p className="gn-mono text-sm text-white/80">{item.ingredients && item.ingredients !== 'null' ? item.ingredients : ''}</p>
             </div>
           )}
 
-          {item.allergens && (
+          {item.allergens && item.allergens !== 'null' ? item.allergens : '' && (
             <div>
               <h3 className="gn-mono text-sm text-white/50 uppercase tracking-widest mb-2">Аллергены</h3>
-              <p className="gn-mono text-sm text-red-400">{item.allergens}</p>
+              <p className="gn-mono text-sm text-red-400">{item.allergens && item.allergens !== 'null' ? item.allergens : ''}</p>
             </div>
           )}
 

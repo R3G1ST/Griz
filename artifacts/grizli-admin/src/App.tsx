@@ -1269,7 +1269,7 @@ function MenuCmsTab() {
             {edit.menuCategory && edit.menuCategory !== 'hookah' && (
               <div>
                 <label className="text-gray-400 text-xs">🧂 Состав (ингредиенты)</label>
-                <textarea value={edit.ingredients || ""} onChange={e => setEdit({ ...edit, ingredients: e.target.value })} className={`${fieldClass} resize-none`} rows={2} placeholder="Вода, сахар, лимонный сок..." />
+                <textarea value={edit.ingredients && edit.ingredients !== "null" ? edit.ingredients : ""} onChange={e => setEdit({ ...edit, ingredients: e.target.value })} className={`${fieldClass} resize-none`} rows={2} placeholder="Вода, сахар, лимонный сок..." />
               </div>
             )}
             
@@ -1289,7 +1289,7 @@ function MenuCmsTab() {
                   </label>
                 ))}
               </div>
-              <input type="text" value={edit.allergens || ""} onChange={e => setEdit({ ...edit, allergens: e.target.value })} className={fieldClass} placeholder="Или введите вручную: Орехи, Глютен" />
+              <input type="text" value={edit.allergens && edit.allergens !== "null" ? edit.allergens : ""} onChange={e => setEdit({ ...edit, allergens: e.target.value })} className={fieldClass} placeholder="Или введите вручную: Орехи, Глютен" />
             </div>
             )}
             
