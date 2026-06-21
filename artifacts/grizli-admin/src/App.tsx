@@ -993,7 +993,7 @@ function MenuCmsTab() {
   // Clone before editing so we never mutate the list-state object in place
   const startEdit = (it: MenuItem) => { setAdding(null); setEdit({ ...it }); };
   // Quick-add a new item with section/category prefilled from the row clicked
-  const startAdding = (preset?: { section?: string; category?: string }) => { setEdit(null); setAdding(preset ?? {}); };
+  const startAdding = (preset?: { section?: string; category?: string }) => { setAdding(preset ?? {}); setEdit({ id: 0, section: preset?.section || "", category: preset?.category || "", name: "", description: "", price: "", sortOrder: 0, isActive: 1, isFeatured: 0 } as MenuItem); };
 
   const load = () => fetch(`${API_BASE}/menu`).then(r => r.json()).then(setItems);
   useEffect(() => { load(); }, []);
