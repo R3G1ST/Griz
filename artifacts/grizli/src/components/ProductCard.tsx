@@ -34,7 +34,7 @@ export function ProductCard({ item, onClose }: Props) {
         <div className="space-y-6">
           <div>
             <h2 className="gn-display text-4xl text-white uppercase">{item.name}</h2>
-            <p className="gn-mono text-2xl text-[#D4FF3F] mt-2">{item.price}</p>
+            <p className="gn-mono text-2xl text-[#D4FF3F] mt-2">{item.outOfStock === 1 ? "Нет в наличии" : item.price}</p>
           </div>
 
           <p className="gn-mono text-base text-white/80 leading-relaxed">{item.description}</p>
