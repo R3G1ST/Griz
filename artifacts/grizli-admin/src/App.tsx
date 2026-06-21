@@ -1125,9 +1125,9 @@ function MenuCmsTab() {
 
       {editing && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-          <div className="bg-neutral-950 border border-white/10 p-6 max-w-2xl w-full max-h-[85vh] overflow-y-auto space-y-3">
+          <div className="bg-neutral-950 border border-white/10 p-6 max-w-lg w-full max-h-[85vh] overflow-y-auto space-y-3">
             <h3 className="text-white font-bold uppercase tracking-widest text-sm mb-4">{editing.id ? "Редактировать" : "Новая позиция"}</h3>
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div>
                 <input list="sections-list" value={editing.section} onChange={e => setEdit({ ...editing, section: e.target.value })}
                   placeholder="Секция (Кальяны/Напитки/Закуски)" className={fieldClass} />
