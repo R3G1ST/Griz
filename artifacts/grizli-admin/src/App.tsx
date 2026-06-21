@@ -1072,7 +1072,7 @@ function MenuCmsTab() {
 
   const editing = edit || (adding ? {
     id: 0,
-    section: adding.section ?? allSections[0] ?? "Кальяны",
+    section: adding.section ?? "",
     category: adding.category ?? "",
     name: "", description: "", price: "", sortOrder: 0, isActive: 1, isFeatured: 0,
   } as MenuItem : null);
@@ -1178,7 +1178,7 @@ function MenuCmsTab() {
               <textarea value={editing.description || ""} onChange={e => setEdit({ ...editing, description: e.target.value })} placeholder="Описание" rows={2} className={`${fieldClass} resize-none`} />
             </div>
             
-            {(editing.menuCategory === 'bar' || editing.menuCategory === 'food') && (
+            {(editing.menuCategory === 'bar' || editing.menuCategory === 'food' || editing.menuCategory === 'tea') && (
               <div className="p-4 border border-lime/30 rounded bg-lime/5 space-y-3">
                 <p className="text-lime text-xs uppercase tracking-widest font-bold">🥗 Пищевая ценность (на 100г)</p>
                 <div className="grid grid-cols-2 gap-2">
@@ -1249,7 +1249,7 @@ function MenuCmsTab() {
                   if (!editing.name?.trim()) missing.push('Название');
                   if (!editing.price?.trim()) missing.push('Цена');
                   if (!editing.menuCategory) missing.push('Главная категория');
-                  toast.error(`⚠️ Заполните обязательные поля: ${missing.join(', ')}`);
+                  En(`⚠️ Заполните обязательные поля: ${missing.join(', ')}`, true);
                   return;
                 }
                 save(editing);
