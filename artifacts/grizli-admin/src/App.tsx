@@ -1125,9 +1125,9 @@ function MenuCmsTab() {
 
       {editing && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-          <div className="bg-neutral-950 border border-white/10 p-6 max-w-lg w-full max-h-[85vh] overflow-y-auto space-y-3">
+          <div className="bg-neutral-950 border border-white/10 p-6 max-w-2xl w-full max-h-[85vh] overflow-y-auto space-y-3">
             <h3 className="text-white font-bold uppercase tracking-widest text-sm mb-4">{editing.id ? "Редактировать" : "Новая позиция"}</h3>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <input list="sections-list" value={editing.section} onChange={e => setEdit({ ...editing, section: e.target.value })}
                   placeholder="Секция (Кальяны/Напитки/Закуски)" className={fieldClass} />
@@ -1212,7 +1212,7 @@ function MenuCmsTab() {
             {(editing.menuCategory === 'bar' || editing.menuCategory === 'food') && (
               <div className="p-4 border border-lime/30 rounded bg-lime/5 space-y-3">
                 <p className="text-lime text-xs uppercase tracking-widest font-bold">🥗 Пищевая ценность (на 100г)</p>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   <div>
                     <label className="text-gray-400 text-xs">Калории</label>
                     <input type="number" value={editing.calories || ""} onChange={e => setEdit({ ...editing, calories: Number(e.target.value) })} className={fieldClass} placeholder="ккал" />
@@ -1257,7 +1257,7 @@ function MenuCmsTab() {
               <input type="text" value={editing.allergens || ""} onChange={e => setEdit({ ...editing, allergens: e.target.value })} className={fieldClass} placeholder="Или введите вручную: Орехи, Глютен" />
             </div>
             <div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <input value={editing.price} onChange={e => setEdit({ ...editing, price: e.target.value })}
                 placeholder="650 ₽" className={fieldClass} />
               <input type="number" value={editing.sortOrder} onChange={e => setEdit({ ...editing, sortOrder: Number(e.target.value) })}
