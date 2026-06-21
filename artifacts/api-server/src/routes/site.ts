@@ -53,15 +53,45 @@ router.get("/menu", async (_req: Request, res: Response) => {
 router.post("/menu", requireAdmin, async (req: Request, res: Response) => {
   console.log('POST /menu received body:', JSON.stringify(req.body));
   try {
-    const { section, category, name, description = "", price, sortOrder = 0, isActive = 1, isFeatured = 0, strength = 4, sessionDuration = 120, bowl = "Phunnel · Glaze", coal = "Coco · 25mm" } = req.body ?? {};
+    const b = req.body ?? {};
+    const { section, category, name, description = "", price, sortOrder = 0, isActive = 1, isFeatured = 0, strength = 4, sessionDuration = 120, bowl = "Phunnel · Glaze", coal = "Coco · 25mm" } = b;
     if (!section || !category || !name || !price) {
       res.status(400).json({ error: "Заполните section, category, name, price" });
       return;
     }
-    const [item] = await db.insert(menuItemsTable)
-      .values({ section, category, name, description, price, sortOrder, isActive: isActive ? 1 : 0, isFeatured: isFeatured ? 1 : 0, strength, sessionDuration, bowl, coal }).returning();
+    
+    // Формируем объект для вставки
+    const insertData: any = { 
+      section, category, name, description, price, sortOrder, 
+      isActive: isActive ? 1 : 0, 
+      isFeatured: isFeatured ? 1 : 0, 
+      strength, sessionDuration, bowl, coal 
+    };
+    
+    // Добавляем новые поля если они есть
+    if (b.menuCategory !== undefined) insertData.menuCategory = String(b.menuCategory);
+    if (b.image !== undefined) insertData.image = String(b.image);
+    if (b.categoryImage !== undefined) insertData.categoryImage = String(b.categoryImage);
+    if (b.ingredients !== undefined) insertData.ingredients = String(b.ingredients);
+    if (b.allergens !== undefined) insertData.allergens = String(b.allergens);
+    if (b.calories !== undefined) insertData.calories = Number(b.calories);
+    if (b.protein !== undefined) insertData.protein = Number(b.protein);
+    if (b.fat !== undefined) insertData.fat = Number(b.fat);
+    if (b.carbs !== undefined) insertData.carbs = Number(b.carbs);
+    if (b.tobaccoBrand !== undefined) insertData.tobaccoBrand = String(b.tobaccoBrand);
+    if (b.tobaccoFlavor !== undefined) insertData.tobaccoFlavor = String(b.tobaccoFlavor);
+    if (b.hookahModel !== undefined) insertData.hookahModel = String(b.hookahModel);
+    if (b.priceFeatured !== undefined) insertData.priceFeatured = String(b.priceFeatured);
+    if (b.descriptionFeatured !== undefined) insertData.descriptionFeatured = String(b.descriptionFeatured);
+    if (b.status !== undefined) insertData.status = String(b.status);
+    if (b.isVisible !== undefined) insertData.isVisible = Number(b.isVisible);
+    
+    const [item] = await db.insert(menuItemsTable).values(insertData).returning();
     res.status(201).json(item);
-  } catch { res.status(500).json({ error: "Ошибка сервера" }); }
+  } catch (e) { 
+    console.error('POST /menu error:', e);
+    res.status(500).json({ error: "Ошибка сервера" }); 
+  }
 });
 
 router.put("/menu/:id", requireAdmin, async (req: Request, res: Response) => {
@@ -81,22 +111,6 @@ router.put("/menu/:id", requireAdmin, async (req: Request, res: Response) => {
     if (b.sessionDuration !== undefined) updates.sessionDuration = Number(b.sessionDuration);
     if (b.bowl !== undefined) updates.bowl = String(b.bowl);
     if (b.coal !== undefined) updates.coal = String(b.coal);
-    if (b.tobaccoBrand !== undefined) updates.tobaccoBrand = String(b.tobaccoBrand);
-    if (b.tobaccoFlavor !== undefined) updates.tobaccoFlavor = String(b.tobaccoFlavor);
-    if (b.hookahModel !== undefined) updates.hookahModel = String(b.hookahModel);
-    if (b.priceFeatured !== undefined) updates.priceFeatured = String(b.priceFeatured);
-    if (b.descriptionFeatured !== undefined) updates.descriptionFeatured = String(b.descriptionFeatured);
-    if (b.image !== undefined) updates.image = String(b.image);
-    if (b.categoryImage !== undefined) updates.categoryImage = String(b.categoryImage);
-    if (b.ingredients !== undefined) updates.ingredients = String(b.ingredients);
-    if (b.allergens !== undefined) updates.allergens = String(b.allergens);
-    if (b.calories !== undefined) updates.calories = Number(b.calories);
-    if (b.protein !== undefined) updates.protein = Number(b.protein);
-    if (b.fat !== undefined) updates.fat = Number(b.fat);
-    if (b.carbs !== undefined) updates.carbs = Number(b.carbs);
-    if (b.menuCategory !== undefined) updates.menuCategory = String(b.menuCategory);
-    if (b.status !== undefined) updates.status = String(b.status);
-    if (b.isVisible !== undefined) updates.isVisible = Number(b.isVisible);
     if (b.tobaccoBrand !== undefined) updates.tobaccoBrand = String(b.tobaccoBrand);
     if (b.tobaccoFlavor !== undefined) updates.tobaccoFlavor = String(b.tobaccoFlavor);
     if (b.hookahModel !== undefined) updates.hookahModel = String(b.hookahModel);
