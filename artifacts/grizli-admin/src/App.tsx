@@ -1135,281 +1135,119 @@ function MenuCmsTab() {
           <div className="bg-neutral-950 border border-white/10 p-6 max-w-2xl w-full max-h-[85vh] overflow-y-auto space-y-4">
             <h3 className="text-white font-bold uppercase tracking-widest text-sm mb-4">{editing.id ? "Редактировать" : "Новая позиция"}</h3>
             
-            {/* Секция */}
             <div>
               <label className="text-gray-400 text-xs">Секция <span className="text-red-500">*</span></label>
-              <input list="sections-list" value={editing.section} onChange={e => setEdit({ ...editing, section: e.target.value })}
+              <input list="sections-list" value={editing.section || ""} onChange={e => setEdit({ ...editing, section: e.target.value })}
                 placeholder="Секция (Кальяны/Напитки/Закуски)" className={fieldClass} />
               <datalist id="sections-list">
                 {allSections.map(s => <option key={s} value={s} />)}
               </datalist>
             </div>
             
-            {/* Главная категория */}
             <div>
               <label className="text-gray-400 text-xs">📂 Главная категория <span className="text-red-500">*</span></label>
-              <select 
-                value={editing.menuCategory || ""} 
-                onChange={e => setEdit({ ...editing, menuCategory: e.target.value })}
-                className={fieldClass}
-              >
+              <select value={editing.menuCategory || ""} onChange={e => setEdit({ ...editing, menuCategory: e.target.value })} className={fieldClass}>
                 <option value="">Выберите категорию</option>
-                <option value="hookah"> Кальяны (hookah)</option>
+                <option value="hookah">🪝 Кальяны (hookah)</option>
                 <option value="bar">🍺 Бар (bar)</option>
                 <option value="food">🍔 Еда (food)</option>
                 <option value="tea">🍵 Чай (tea)</option>
               </select>
             </div>
             
-            {/* Подкатегория */}
             <div>
               <label className="text-gray-400 text-xs">Подкатегория <span className="text-red-500">*</span></label>
-              <select 
-                value={editing.category} 
-                onChange={e => setEdit({ ...editing, category: e.target.value })}
-                className={fieldClass}
-              >
+              <select value={editing.category || ""} onChange={e => setEdit({ ...editing, category: e.target.value })} className={fieldClass}>
                 <option value="">Выберите подкатегорию</option>
-                {editing.menuCategory === 'bar' && (
-                  <>
-                    <option value="Пиво"> Пиво</option>
-                    <option value="Лимонады">🍋 Лимонады</option>
-                    <option value="Напитки">🥤 Напитки</option>
-                  </>
-                )}
-                {editing.menuCategory === 'food' && (
-                  <>
-                    <option value="Десерты">🍰 Десерты</option>
-                    <option value="Допы">➕ Допы</option>
-                  </>
-                )}
-                {editing.menuCategory === 'tea' && (
-                  <>
-                    <option value="Китайский чай">🍃 Китайский чай</option>
-                    <option value="Обычный">☕ Обычный чай</option>
-                    <option value="Авторский">✨ Авторский чай</option>
-                    <option value="Допы к чаю">🍵 Допы к чаю</option>
-                  </>
-                )}
-                {editing.menuCategory === 'hookah' && (
-                  <>
-                    <option value="Standart">⭐ Standart</option>
-                    <option value="Premium">💎 Premium</option>
-                    <option value="Авторские">🎨 Авторские</option>
-                  </>
-                )}
-                {!editing.menuCategory && (
-                  <>
-                    {(editing.section && categoriesBySection[editing.section]
-                      ? Array.from(categoriesBySection[editing.section])
-                      : allCategories).map(c => <option key={c} value={c}>{c}</option>)}
-                  </>
-                )}
+                {editing.menuCategory === 'bar' && (<><option value="Пиво">🍺 Пиво</option><option value="Лимонады"> Лимонады</option><option value="Напитки">🥤 Напитки</option></>)}
+                {editing.menuCategory === 'food' && (<><option value="Десерты">🍰 Десерты</option><option value="Допы">➕ Допы</option></>)}
+                {editing.menuCategory === 'tea' && (<><option value="Китайский чай"> Китайский чай</option><option value="Обычный">☕ Обычный чай</option><option value="Авторский">✨ Авторский чай</option><option value="Допы к чаю">🍵 Допы к чаю</option></>)}
+                {editing.menuCategory === 'hookah' && (<><option value="Standart">⭐ Standart</option><option value="Premium">💎 Premium</option><option value="Авторские">🎨 Авторские</option></>)}
+                {!editing.menuCategory && allCategories.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
-              <input 
-                type="text"
-                value={editing.category} 
-                onChange={e => setEdit({ ...editing, category: e.target.value })}
-                placeholder="Или введите свою подкатегорию" 
-                className={fieldClass} 
-              />
             </div>
             
-            <p className="text-gray-600 text-[10px] uppercase tracking-widest">Можно вводить свои значения — категории создаются автоматически</p>
-            
-            {/* Название */}
             <div>
               <label className="text-gray-400 text-xs">Название <span className="text-red-500">*</span></label>
-              <input value={editing.name} onChange={e => setEdit({ ...editing, name: e.target.value })}
-                placeholder="Название" className={fieldClass} />
+              <input value={editing.name || ""} onChange={e => setEdit({ ...editing, name: e.target.value })} placeholder="Название" className={fieldClass} />
             </div>
             
-            {/* Описание */}
             <div>
               <label className="text-gray-400 text-xs">Описание</label>
-              <textarea value={editing.description} onChange={e => setEdit({ ...editing, description: e.target.value })}
-                placeholder="Описание" rows={2} className={`${fieldClass} resize-none`} />
+              <textarea value={editing.description || ""} onChange={e => setEdit({ ...editing, description: e.target.value })} placeholder="Описание" rows={2} className={`${fieldClass} resize-none`} />
             </div>
             
-            {/* БЖУ и калории */}
             {(editing.menuCategory === 'bar' || editing.menuCategory === 'food') && (
               <div className="p-4 border border-lime/30 rounded bg-lime/5 space-y-3">
                 <p className="text-lime text-xs uppercase tracking-widest font-bold">🥗 Пищевая ценность (на 100г)</p>
                 <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-gray-400 text-xs">Калории</label>
-                    <input type="number" value={editing.calories || ""} onChange={e => setEdit({ ...editing, calories: Number(e.target.value) })} className={fieldClass} placeholder="ккал" />
-                  </div>
-                  <div>
-                    <label className="text-gray-400 text-xs">Белки</label>
-                    <input type="number" value={editing.protein || ""} onChange={e => setEdit({ ...editing, protein: Number(e.target.value) })} className={fieldClass} placeholder="г" />
-                  </div>
-                  <div>
-                    <label className="text-gray-400 text-xs">Жиры</label>
-                    <input type="number" value={editing.fat || ""} onChange={e => setEdit({ ...editing, fat: Number(e.target.value) })} className={fieldClass} placeholder="г" />
-                  </div>
-                  <div>
-                    <label className="text-gray-400 text-xs">Углеводы</label>
-                    <input type="number" value={editing.carbs || ""} onChange={e => setEdit({ ...editing, carbs: Number(e.target.value) })} className={fieldClass} placeholder="г" />
-                  </div>
+                  <div><label className="text-gray-400 text-xs">Калории</label><input type="number" value={editing.calories || ""} onChange={e => setEdit({ ...editing, calories: Number(e.target.value) })} className={fieldClass} placeholder="ккал" /></div>
+                  <div><label className="text-gray-400 text-xs">Белки</label><input type="number" value={editing.protein || ""} onChange={e => setEdit({ ...editing, protein: Number(e.target.value) })} className={fieldClass} placeholder="г" /></div>
+                  <div><label className="text-gray-400 text-xs">Жиры</label><input type="number" value={editing.fat || ""} onChange={e => setEdit({ ...editing, fat: Number(e.target.value) })} className={fieldClass} placeholder="г" /></div>
+                  <div><label className="text-gray-400 text-xs">Углеводы</label><input type="number" value={editing.carbs || ""} onChange={e => setEdit({ ...editing, carbs: Number(e.target.value) })} className={fieldClass} placeholder="г" /></div>
                 </div>
               </div>
             )}
             
-            {/* Состав */}
-            <div>
-              <label className="text-gray-400 text-xs">🧂 Состав (ингредиенты)</label>
-              <textarea value={editing.ingredients || ""} onChange={e => setEdit({ ...editing, ingredients: e.target.value })} className={`${fieldClass} resize-none`} rows={2} placeholder="Вода, сахар, лимонный сок..." />
-            </div>
+            {editing.menuCategory && editing.menuCategory !== 'hookah' && (
+              <div><label className="text-gray-400 text-xs"> Состав</label><textarea value={editing.ingredients || ""} onChange={e => setEdit({ ...editing, ingredients: e.target.value })} className={`${fieldClass} resize-none`} rows={2} placeholder="Вода, сахар..." /></div>
+            )}
             
-            {/* Аллергены */}
-            <div>
-              <label className="text-gray-400 text-xs">⚠️ Аллергены</label>
-              <div className="flex flex-wrap gap-2 mb-2">
-                {['Орехи', 'Глютен', 'Лактоза', 'Соя', 'Яйца'].map(allergen => (
-                  <label key={allergen} className="flex items-center gap-1 text-xs">
-                    <input type="checkbox" checked={(editing.allergens || '').includes(allergen)} onChange={e => {
-                      const current = editing.allergens ? editing.allergens.split(', ') : [];
-                      const next = e.target.checked ? [...current, allergen] : current.filter(a => a !== allergen);
+            {editing.menuCategory && editing.menuCategory !== 'hookah' && (
+              <div>
+                <label className="text-gray-400 text-xs">⚠️ Аллергены</label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {['Орехи', 'Глютен', 'Лактоза', 'Соя', 'Яйца'].map(a => (
+                    <label key={a} className="flex items-center gap-1 text-xs"><input type="checkbox" checked={(editing.allergens || '').includes(a)} onChange={e => {
+                      const cur = editing.allergens ? editing.allergens.split(', ') : [];
+                      const next = e.target.checked ? [...cur, a] : cur.filter(x => x !== a);
                       setEdit({ ...editing, allergens: next.join(', ') });
-                    }} className="w-4 h-4 accent-lime" />
-                    <span className="text-white">{allergen}</span>
-                  </label>
-                ))}
+                    }} className="w-4 h-4 accent-lime" /><span className="text-white">{a}</span></label>
+                  ))}
+                </div>
+                <input type="text" value={editing.allergens || ""} onChange={e => setEdit({ ...editing, allergens: e.target.value })} className={fieldClass} placeholder="Или введите вручную" />
               </div>
-              <input type="text" value={editing.allergens || ""} onChange={e => setEdit({ ...editing, allergens: e.target.value })} className={fieldClass} placeholder="Или введите вручную: Орехи, Глютен" />
-            </div>
+            )}
             
-            {/* Цена, порядок, активна */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div>
-                <label className="text-gray-400 text-xs">Цена <span className="text-red-500">*</span></label>
-                <input value={editing.price} onChange={e => setEdit({ ...editing, price: e.target.value })}
-                  placeholder="650 ₽" className={fieldClass} />
-              </div>
-              <div>
-                <label className="text-gray-400 text-xs">Порядок</label>
-                <input type="number" value={editing.sortOrder} onChange={e => setEdit({ ...editing, sortOrder: Number(e.target.value) })}
-                  placeholder="Порядок" className={fieldClass} />
-              </div>
-              <div>
-                <label className="text-gray-400 text-xs">Активна</label>
-                <label className="flex items-center gap-2 text-white text-sm mt-2">
-                  <input type="checkbox" checked={!!editing.isActive} onChange={e => setEdit({ ...editing, isActive: e.target.checked ? 1 : 0 })} />
-                </label>
-              </div>
+              <div><label className="text-gray-400 text-xs">Цена <span className="text-red-500">*</span></label><input value={editing.price || ""} onChange={e => setEdit({ ...editing, price: e.target.value })} placeholder="650 ₽" className={fieldClass} /></div>
+              <div><label className="text-gray-400 text-xs">Порядок</label><input type="number" value={editing.sortOrder || 0} onChange={e => setEdit({ ...editing, sortOrder: Number(e.target.value) })} placeholder="Порядок" className={fieldClass} /></div>
+              <div><label className="text-gray-400 text-xs">Активна</label><label className="flex items-center gap-2 text-white text-sm mt-2"><input type="checkbox" checked={!!editing.isActive} onChange={e => setEdit({ ...editing, isActive: e.target.checked ? 1 : 0 })} /></label></div>
             </div>
             
-            {/* Кальян недели */}
-            {(/кальян/i.test(editing.section) || /кальян/i.test(editing.category) || /hookah/i.test(editing.section) || /hookah/i.test(editing.category)) && (
-              <div onClick={e => e.stopPropagation()} className="p-4 border border-lime/30 rounded bg-lime/5 space-y-3">
+            {editing.menuCategory === 'hookah' && (
+              <div className="p-4 border border-lime/30 rounded bg-lime/5 space-y-3">
                 <label className="flex items-center gap-3 cursor-pointer">
-                  <input 
-                    type="checkbox" 
-                    checked={!!editing.isFeatured} 
-                    onChange={e => { setEdit({ ...editing, isFeatured: e.target.checked ? 1 : 0 }); }}
-                    onClick={e => e.stopPropagation()}
-                    className="w-5 h-5 accent-lime"
-                  />
-                  <span className="text-lime text-sm font-bold uppercase tracking-wider">
-                    Сделать "Кальяном недели" (показать на главной)
-                  </span>
+                  <input type="checkbox" checked={!!editing.isFeatured} onChange={e => setEdit({ ...editing, isFeatured: e.target.checked ? 1 : 0 })} className="w-5 h-5 accent-lime" />
+                  <span className="text-lime text-sm font-bold uppercase tracking-wider">Кальян недели</span>
                 </label>
                 {editing.isFeatured === 1 && (
                   <div className="space-y-2 pt-2 border-t border-lime/20">
-                    <p className="text-lime text-xs uppercase tracking-widest">Дополнительные поля для кальяна недели:</p>
                     <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="text-gray-400 text-xs">Крепость (1-10)</label>
-                        <input 
-                          type="number" 
-                          min="1" 
-                          max="10"
-                          value={editing.strength || 4} 
-                          onChange={e => setEdit({ ...editing, strength: Number(e.target.value) })}
-                          className={fieldClass}
-                        />
-                      </div>
-                      <div>
-                        <label className="text-gray-400 text-xs">Время сессии (мин)</label>
-                        <input 
-                          type="number" 
-                          value={editing.sessionDuration || 120} 
-                          onChange={e => setEdit({ ...editing, sessionDuration: Number(e.target.value) })}
-                          className={fieldClass}
-                        />
-                      </div>
+                      <div><label className="text-gray-400 text-xs">Крепость</label><input type="number" min="1" max="10" value={editing.strength || 4} onChange={e => setEdit({ ...editing, strength: Number(e.target.value) })} className={fieldClass} /></div>
+                      <div><label className="text-gray-400 text-xs">Время сессии</label><input type="number" value={editing.sessionDuration || 120} onChange={e => setEdit({ ...editing, sessionDuration: Number(e.target.value) })} className={fieldClass} /></div>
                     </div>
-                    <div>
-                      <label className="text-gray-400 text-xs">Чаша</label>
-                      <input 
-                        value={editing.bowl || "Phunnel · Glaze"} 
-                        onChange={e => setEdit({ ...editing, bowl: e.target.value })}
-                        className={fieldClass}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-gray-400 text-xs">Уголь</label>
-                      <input 
-                        value={editing.coal || ""} 
-                        onChange={e => setEdit({ ...editing, coal: e.target.value })}
-                        className={fieldClass}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-gray-400 text-xs">Бренд табака</label>
-                      <input 
-                        value={editing.tobaccoBrand || ""} 
-                        onChange={e => setEdit({ ...editing, tobaccoBrand: e.target.value })}
-                        className={fieldClass}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-gray-400 text-xs">Вкус табака</label>
-                      <input 
-                        value={editing.tobaccoFlavor || ""} 
-                        onChange={e => setEdit({ ...editing, tobaccoFlavor: e.target.value })}
-                        className={fieldClass}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-gray-400 text-xs">Модель кальяна</label>
-                      <input 
-                        value={editing.hookahModel || ""} 
-                        onChange={e => setEdit({ ...editing, hookahModel: e.target.value })}
-                        className={fieldClass}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-gray-400 text-xs">Цена (для кальяна недели)</label>
-                      <input 
-                        value={editing.priceFeatured || ""} 
-                        onChange={e => setEdit({ ...editing, priceFeatured: e.target.value })}
-                        className={fieldClass}
-                      />
-                    </div>
-                    <div>
-                      <label className="text-gray-400 text-xs">Описание (для кальяна недели)</label>
-                      <textarea 
-                        value={editing.descriptionFeatured || ""} 
-                        onChange={e => setEdit({ ...editing, descriptionFeatured: e.target.value })}
-                        className={`${fieldClass} resize-none`}
-                        rows={3}
-                      />
-                    </div>
+                    <div><label className="text-gray-400 text-xs">Чаша</label><input value={editing.bowl || ""} onChange={e => setEdit({ ...editing, bowl: e.target.value })} className={fieldClass} /></div>
+                    <div><label className="text-gray-400 text-xs">Уголь</label><input value={editing.coal || ""} onChange={e => setEdit({ ...editing, coal: e.target.value })} className={fieldClass} /></div>
+                    <div><label className="text-gray-400 text-xs">Табак</label><input value={editing.tobaccoBrand || ""} onChange={e => setEdit({ ...editing, tobaccoBrand: e.target.value })} className={fieldClass} /></div>
+                    <div><label className="text-gray-400 text-xs">Вкус</label><input value={editing.tobaccoFlavor || ""} onChange={e => setEdit({ ...editing, tobaccoFlavor: e.target.value })} className={fieldClass} /></div>
+                    <div><label className="text-gray-400 text-xs">Модель кальяна</label><input value={editing.hookahModel || ""} onChange={e => setEdit({ ...editing, hookahModel: e.target.value })} className={fieldClass} /></div>
+                    <div><label className="text-gray-400 text-xs">Цена (неделя)</label><input value={editing.priceFeatured || ""} onChange={e => setEdit({ ...editing, priceFeatured: e.target.value })} className={fieldClass} /></div>
+                    <div><label className="text-gray-400 text-xs">Описание</label><textarea value={editing.descriptionFeatured || ""} onChange={e => setEdit({ ...editing, descriptionFeatured: e.target.value })} className={`${fieldClass} resize-none`} rows={2} /></div>
                   </div>
                 )}
               </div>
             )}
             
-            {/* Кнопки */}
             <div className="flex gap-2 pt-4">
-              <button onClick={() => save(editing)} className="flex-1 bg-lime text-black font-bold uppercase tracking-widest py-2 text-xs hover:bg-lime/80">
-                Сохранить
-              </button>
-              <button onClick={() => { setEdit(null); setAdding(null); }} className="px-4 py-2 border border-white/10 text-gray-400 text-xs uppercase tracking-widest hover:bg-white/5">
-                Отмена
-              </button>
+              <button onClick={() => {
+                if (!editing.section?.trim() || !editing.category?.trim() || !editing.name?.trim() || !editing.price?.trim() || !editing.menuCategory) {
+                  alert('⚠️ Заполните обязательные поля: Секция, Категория, Название, Цена, Главная категория');
+                  return;
+                }
+                save(editing);
+              }} className="flex-1 bg-lime text-black font-bold uppercase tracking-widest py-2 text-xs hover:bg-lime/80">Сохранить</button>
+              <button onClick={() => setEdit(null)} className="px-4 py-2 border border-white/10 text-gray-400 text-xs uppercase tracking-widest hover:bg-white/5">Отмена</button>
             </div>
           </div>
         </div>
