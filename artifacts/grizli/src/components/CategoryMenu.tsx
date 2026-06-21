@@ -12,6 +12,7 @@ type MenuItem = {
   image?: string | null;
   status?: string | null;
   isVisible?: number | null;
+  outOfStock?: number | null;
 };
 
 type Props = {
@@ -24,7 +25,7 @@ type Props = {
 export function CategoryMenu({ items, category, onClose, onSelectItem }: Props) {
   const categoryItems = items.filter(i => {
     const cat = i.menuCategory || i.section;
-    return (cat === category || i.section === category) && i.isVisible !== 0;
+    return (cat === category || i.section === category) && i.isActive === 1;
   });
 
   // Группируем по подкатегориям и сортируем (Допы в конце)
@@ -84,7 +85,7 @@ export function CategoryMenu({ items, category, onClose, onSelectItem }: Props) 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-4">
                           <h4 className="gn-mono text-lg text-white font-bold">{item.name}</h4>
-                          <span className="gn-mono text-lg text-[#D4FF3F] whitespace-nowrap">{item.price}</span>
+                          <span className="gn-mono text-lg text-[#D4FF3F] whitespace-nowrap">{item.outOfStock === 1 ? "Нет в наличии" : item.price}</span>
                         </div>
                         <p className="gn-mono text-sm text-white/60 mt-1 line-clamp-2">{item.description}</p>
                         {item.status === 'stop' && (
