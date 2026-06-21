@@ -1165,6 +1165,7 @@ function MenuCmsTab() {
                 {editing.menuCategory === 'hookah' && (<><option value="Standart">⭐ Standart</option><option value="Premium">💎 Premium</option><option value="Авторские">🎨 Авторские</option></>)}
                 {!editing.menuCategory && allCategories.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
+              <input type="text" value={editing.category || ""} onChange={e => setEdit({ ...editing, category: e.target.value })} placeholder="Или введите свою подкатегорию" className={fieldClass} />
             </div>
             
             <div>
@@ -1242,12 +1243,18 @@ function MenuCmsTab() {
             <div className="flex gap-2 pt-4">
               <button onClick={() => {
                 if (!editing.section?.trim() || !editing.category?.trim() || !editing.name?.trim() || !editing.price?.trim() || !editing.menuCategory) {
-                  alert('⚠️ Заполните обязательные поля: Секция, Категория, Название, Цена, Главная категория');
+                  const missing = [];
+                  if (!editing.section?.trim()) missing.push('Секция');
+                  if (!editing.category?.trim()) missing.push('Категория');
+                  if (!editing.name?.trim()) missing.push('Название');
+                  if (!editing.price?.trim()) missing.push('Цена');
+                  if (!editing.menuCategory) missing.push('Главная категория');
+                  toast.error(`⚠️ Заполните обязательные поля: ${missing.join(', ')}`);
                   return;
                 }
                 save(editing);
               }} className="flex-1 bg-lime text-black font-bold uppercase tracking-widest py-2 text-xs hover:bg-lime/80">Сохранить</button>
-              <button onClick={() => setEdit(null)} className="px-4 py-2 border border-white/10 text-gray-400 text-xs uppercase tracking-widest hover:bg-white/5">Отмена</button>
+              <button onClick={() => { setEdit(null); setAdding(null); }} className="px-4 py-2 border border-white/10 text-gray-400 text-xs uppercase tracking-widest hover:bg-white/5">Отмена</button>
             </div>
           </div>
         </div>
