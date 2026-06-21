@@ -990,7 +990,7 @@ function MenuCmsTab() {
   const [adding, setAdding] = useState<null | { section?: string; category?: string }>(null);
 
   // Clone before editing so we never mutate the list-state object in place
-  const startEdit = (it: MenuItem) => { setAdding(null); setEdit({ ...it }); };
+  const startEdit = (it: MenuItem) => { setAdding(null); setError(""); setEdit({ ...it }); };
   // Quick-add a new item with section/category prefilled from the row clicked
   const startAdding = (preset?: { section?: string; category?: string }) => { setEdit(null); setAdding(preset ?? {}); };
 
@@ -1134,19 +1134,20 @@ function MenuCmsTab() {
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
           <div className="bg-neutral-950 border border-white/10 p-6 max-w-2xl w-full max-h-[85vh] overflow-y-auto space-y-4">
             <h3 className="text-white font-bold uppercase tracking-widest text-sm mb-4">{editing.id ? "Редактировать" : "Новая позиция"}</h3>
+            {error && <div className="bg-red-500/20 border border-red-500 text-red-500 px-3 py-2 rounded text-xs mb-4">{error}</div>}
             
             <div>
               <label className="text-gray-400 text-xs">Секция <span className="text-red-500">*</span></label>
-              <input list="sections-list" value={editing.section || ""} onChange={e => setEdit({ ...editing, section: e.target.value })}
-                placeholder="Секция (Кальяны/Напитки/Закуски)" className={fieldClass} />
-              <datalist id="sections-list">
-                {allSections.map(s => <option key={s} value={s} />)}
-              </datalist>
+              <select value={editing.section || ""} onChange={e => { setError(""); setEdit({ ...editing, section: e.target.value }); }} className={fieldClass}>
+                <option value="">Выберите или создайте секцию</option>
+                {allSections.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+              <input type="text" value={editing.section || ""} onChange={e => { setError(""); setEdit({ ...editing, section: e.target.value }); }} placeholder="Или введите новую секцию" className={fieldClass} />
             </div>
             
             <div>
               <label className="text-gray-400 text-xs">📂 Главная категория <span className="text-red-500">*</span></label>
-              <select value={editing.menuCategory || ""} onChange={e => setEdit({ ...editing, menuCategory: e.target.value })} className={fieldClass}>
+              <select value={editing.menuCategory || ""} onChange={e => { setError(""); setEdit({ ...editing, menuCategory: e.target.value }); }} className={fieldClass}>
                 <option value="">Выберите категорию</option>
                 <option value="hookah">🪝 Кальяны (hookah)</option>
                 <option value="bar">🍺 Бар (bar)</option>
@@ -1157,7 +1158,7 @@ function MenuCmsTab() {
             
             <div>
               <label className="text-gray-400 text-xs">Подкатегория <span className="text-red-500">*</span></label>
-              <select value={editing.category || ""} onChange={e => setEdit({ ...editing, category: e.target.value })} className={fieldClass}>
+              <select value={editing.category || ""} onChange={e => { setError(""); setEdit({ ...editing, category: e.target.value }); }} className={fieldClass}>
                 <option value="">Выберите подкатегорию</option>
                 {editing.menuCategory === 'bar' && (<><option value="Пиво">🍺 Пиво</option><option value="Лимонады"> Лимонады</option><option value="Напитки">🥤 Напитки</option></>)}
                 {editing.menuCategory === 'food' && (<><option value="Десерты">🍰 Десерты</option><option value="Допы">➕ Допы</option></>)}
@@ -1165,33 +1166,33 @@ function MenuCmsTab() {
                 {editing.menuCategory === 'hookah' && (<><option value="Standart">⭐ Standart</option><option value="Premium">💎 Premium</option><option value="Авторские">🎨 Авторские</option></>)}
                 {!editing.menuCategory && allCategories.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
-              <input type="text" value={editing.category || ""} onChange={e => setEdit({ ...editing, category: e.target.value })} placeholder="Или введите свою подкатегорию" className={fieldClass} />
+              <input type="text" value={editing.category || ""} onChange={e => { setError(""); setEdit({ ...editing, category: e.target.value }); }} placeholder="Или введите свою подкатегорию" className={fieldClass} />
             </div>
             
             <div>
               <label className="text-gray-400 text-xs">Название <span className="text-red-500">*</span></label>
-              <input value={editing.name || ""} onChange={e => setEdit({ ...editing, name: e.target.value })} placeholder="Название" className={fieldClass} />
+              <input value={editing.name || ""} onChange={e => { setError(""); setEdit({ ...editing, name: e.target.value }); }} placeholder="Название" className={fieldClass} />
             </div>
             
             <div>
               <label className="text-gray-400 text-xs">Описание</label>
-              <textarea value={editing.description || ""} onChange={e => setEdit({ ...editing, description: e.target.value })} placeholder="Описание" rows={2} className={`${fieldClass} resize-none`} />
+              <textarea value={editing.description || ""} onChange={e => { setError(""); setEdit({ ...editing, description: e.target.value }); }} placeholder="Описание" rows={2} className={`${fieldClass} resize-none`} />
             </div>
             
             {(editing.menuCategory === 'bar' || editing.menuCategory === 'food' || editing.menuCategory === 'tea') && (
               <div className="p-4 border border-lime/30 rounded bg-lime/5 space-y-3">
                 <p className="text-lime text-xs uppercase tracking-widest font-bold">🥗 Пищевая ценность (на 100г)</p>
                 <div className="grid grid-cols-2 gap-2">
-                  <div><label className="text-gray-400 text-xs">Калории</label><input type="number" value={editing.calories || ""} onChange={e => setEdit({ ...editing, calories: Number(e.target.value) })} className={fieldClass} placeholder="ккал" /></div>
-                  <div><label className="text-gray-400 text-xs">Белки</label><input type="number" value={editing.protein || ""} onChange={e => setEdit({ ...editing, protein: Number(e.target.value) })} className={fieldClass} placeholder="г" /></div>
-                  <div><label className="text-gray-400 text-xs">Жиры</label><input type="number" value={editing.fat || ""} onChange={e => setEdit({ ...editing, fat: Number(e.target.value) })} className={fieldClass} placeholder="г" /></div>
-                  <div><label className="text-gray-400 text-xs">Углеводы</label><input type="number" value={editing.carbs || ""} onChange={e => setEdit({ ...editing, carbs: Number(e.target.value) })} className={fieldClass} placeholder="г" /></div>
+                  <div><label className="text-gray-400 text-xs">Калории</label><input type="number" value={editing.calories || ""} onChange={e => { setError(""); setEdit({ ...editing, calories: Number(e.target.value) }); }} className={fieldClass} placeholder="ккал" /></div>
+                  <div><label className="text-gray-400 text-xs">Белки</label><input type="number" value={editing.protein || ""} onChange={e => { setError(""); setEdit({ ...editing, protein: Number(e.target.value) }); }} className={fieldClass} placeholder="г" /></div>
+                  <div><label className="text-gray-400 text-xs">Жиры</label><input type="number" value={editing.fat || ""} onChange={e => { setError(""); setEdit({ ...editing, fat: Number(e.target.value) }); }} className={fieldClass} placeholder="г" /></div>
+                  <div><label className="text-gray-400 text-xs">Углеводы</label><input type="number" value={editing.carbs || ""} onChange={e => { setError(""); setEdit({ ...editing, carbs: Number(e.target.value) }); }} className={fieldClass} placeholder="г" /></div>
                 </div>
               </div>
             )}
             
             {editing.menuCategory && editing.menuCategory !== 'hookah' && (
-              <div><label className="text-gray-400 text-xs"> Состав</label><textarea value={editing.ingredients || ""} onChange={e => setEdit({ ...editing, ingredients: e.target.value })} className={`${fieldClass} resize-none`} rows={2} placeholder="Вода, сахар..." /></div>
+              <div><label className="text-gray-400 text-xs"> Состав</label><textarea value={editing.ingredients || ""} onChange={e => { setError(""); setEdit({ ...editing, ingredients: e.target.value }); }} className={`${fieldClass} resize-none`} rows={2} placeholder="Вода, сахар..." /></div>
             )}
             
             {editing.menuCategory && editing.menuCategory !== 'hookah' && (
@@ -1202,39 +1203,39 @@ function MenuCmsTab() {
                     <label key={a} className="flex items-center gap-1 text-xs"><input type="checkbox" checked={(editing.allergens || '').includes(a)} onChange={e => {
                       const cur = editing.allergens ? editing.allergens.split(', ') : [];
                       const next = e.target.checked ? [...cur, a] : cur.filter(x => x !== a);
-                      setEdit({ ...editing, allergens: next.join(', ') });
+                      setError(""); setEdit({ ...editing, allergens: next.join(', ') });
                     }} className="w-4 h-4 accent-lime" /><span className="text-white">{a}</span></label>
                   ))}
                 </div>
-                <input type="text" value={editing.allergens || ""} onChange={e => setEdit({ ...editing, allergens: e.target.value })} className={fieldClass} placeholder="Или введите вручную" />
+                <input type="text" value={editing.allergens || ""} onChange={e => { setError(""); setEdit({ ...editing, allergens: e.target.value }); }} className={fieldClass} placeholder="Или введите вручную" />
               </div>
             )}
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <div><label className="text-gray-400 text-xs">Цена <span className="text-red-500">*</span></label><input value={editing.price || ""} onChange={e => setEdit({ ...editing, price: e.target.value })} placeholder="650 ₽" className={fieldClass} /></div>
-              <div><label className="text-gray-400 text-xs">Порядок</label><input type="number" value={editing.sortOrder || 0} onChange={e => setEdit({ ...editing, sortOrder: Number(e.target.value) })} placeholder="Порядок" className={fieldClass} /></div>
-              <div><label className="text-gray-400 text-xs">Активна</label><label className="flex items-center gap-2 text-white text-sm mt-2"><input type="checkbox" checked={!!editing.isActive} onChange={e => setEdit({ ...editing, isActive: e.target.checked ? 1 : 0 })} /></label></div>
+              <div><label className="text-gray-400 text-xs">Цена <span className="text-red-500">*</span></label><input value={editing.price || ""} onChange={e => { setError(""); setEdit({ ...editing, price: e.target.value }); }} placeholder="650 ₽" className={fieldClass} /></div>
+              <div><label className="text-gray-400 text-xs">Порядок</label><input type="number" value={editing.sortOrder || 0} onChange={e => { setError(""); setEdit({ ...editing, sortOrder: Number(e.target.value) }); }} placeholder="Порядок" className={fieldClass} /></div>
+              <div><label className="text-gray-400 text-xs">Активна</label><label className="flex items-center gap-2 text-white text-sm mt-2"><input type="checkbox" checked={!!editing.isActive} onChange={e => { setError(""); setEdit({ ...editing, isActive: e.target.checked ? 1 : 0 }); }} /></label></div>
             </div>
             
             {editing.menuCategory === 'hookah' && (
               <div className="p-4 border border-lime/30 rounded bg-lime/5 space-y-3">
                 <label className="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" checked={!!editing.isFeatured} onChange={e => setEdit({ ...editing, isFeatured: e.target.checked ? 1 : 0 })} className="w-5 h-5 accent-lime" />
+                  <input type="checkbox" checked={!!editing.isFeatured} onChange={e => { setError(""); setEdit({ ...editing, isFeatured: e.target.checked ? 1 : 0 }); }} className="w-5 h-5 accent-lime" />
                   <span className="text-lime text-sm font-bold uppercase tracking-wider">Кальян недели</span>
                 </label>
                 {editing.isFeatured === 1 && (
                   <div className="space-y-2 pt-2 border-t border-lime/20">
                     <div className="grid grid-cols-2 gap-2">
-                      <div><label className="text-gray-400 text-xs">Крепость</label><input type="number" min="1" max="10" value={editing.strength || 4} onChange={e => setEdit({ ...editing, strength: Number(e.target.value) })} className={fieldClass} /></div>
-                      <div><label className="text-gray-400 text-xs">Время сессии</label><input type="number" value={editing.sessionDuration || 120} onChange={e => setEdit({ ...editing, sessionDuration: Number(e.target.value) })} className={fieldClass} /></div>
+                      <div><label className="text-gray-400 text-xs">Крепость</label><input type="number" min="1" max="10" value={editing.strength || 4} onChange={e => { setError(""); setEdit({ ...editing, strength: Number(e.target.value) }); }} className={fieldClass} /></div>
+                      <div><label className="text-gray-400 text-xs">Время сессии</label><input type="number" value={editing.sessionDuration || 120} onChange={e => { setError(""); setEdit({ ...editing, sessionDuration: Number(e.target.value) }); }} className={fieldClass} /></div>
                     </div>
-                    <div><label className="text-gray-400 text-xs">Чаша</label><input value={editing.bowl || ""} onChange={e => setEdit({ ...editing, bowl: e.target.value })} className={fieldClass} /></div>
-                    <div><label className="text-gray-400 text-xs">Уголь</label><input value={editing.coal || ""} onChange={e => setEdit({ ...editing, coal: e.target.value })} className={fieldClass} /></div>
-                    <div><label className="text-gray-400 text-xs">Табак</label><input value={editing.tobaccoBrand || ""} onChange={e => setEdit({ ...editing, tobaccoBrand: e.target.value })} className={fieldClass} /></div>
-                    <div><label className="text-gray-400 text-xs">Вкус</label><input value={editing.tobaccoFlavor || ""} onChange={e => setEdit({ ...editing, tobaccoFlavor: e.target.value })} className={fieldClass} /></div>
-                    <div><label className="text-gray-400 text-xs">Модель кальяна</label><input value={editing.hookahModel || ""} onChange={e => setEdit({ ...editing, hookahModel: e.target.value })} className={fieldClass} /></div>
-                    <div><label className="text-gray-400 text-xs">Цена (неделя)</label><input value={editing.priceFeatured || ""} onChange={e => setEdit({ ...editing, priceFeatured: e.target.value })} className={fieldClass} /></div>
-                    <div><label className="text-gray-400 text-xs">Описание</label><textarea value={editing.descriptionFeatured || ""} onChange={e => setEdit({ ...editing, descriptionFeatured: e.target.value })} className={`${fieldClass} resize-none`} rows={2} /></div>
+                    <div><label className="text-gray-400 text-xs">Чаша</label><input value={editing.bowl || ""} onChange={e => { setError(""); setEdit({ ...editing, bowl: e.target.value }); }} className={fieldClass} /></div>
+                    <div><label className="text-gray-400 text-xs">Уголь</label><input value={editing.coal || ""} onChange={e => { setError(""); setEdit({ ...editing, coal: e.target.value }); }} className={fieldClass} /></div>
+                    <div><label className="text-gray-400 text-xs">Табак</label><input value={editing.tobaccoBrand || ""} onChange={e => { setError(""); setEdit({ ...editing, tobaccoBrand: e.target.value }); }} className={fieldClass} /></div>
+                    <div><label className="text-gray-400 text-xs">Вкус</label><input value={editing.tobaccoFlavor || ""} onChange={e => { setError(""); setEdit({ ...editing, tobaccoFlavor: e.target.value }); }} className={fieldClass} /></div>
+                    <div><label className="text-gray-400 text-xs">Модель кальяна</label><input value={editing.hookahModel || ""} onChange={e => { setError(""); setEdit({ ...editing, hookahModel: e.target.value }); }} className={fieldClass} /></div>
+                    <div><label className="text-gray-400 text-xs">Цена (неделя)</label><input value={editing.priceFeatured || ""} onChange={e => { setError(""); setEdit({ ...editing, priceFeatured: e.target.value }); }} className={fieldClass} /></div>
+                    <div><label className="text-gray-400 text-xs">Описание</label><textarea value={editing.descriptionFeatured || ""} onChange={e => { setError(""); setEdit({ ...editing, descriptionFeatured: e.target.value }); }} className={`${fieldClass} resize-none`} rows={2} /></div>
                   </div>
                 )}
               </div>
@@ -1249,9 +1250,10 @@ function MenuCmsTab() {
                   if (!editing.name?.trim()) missing.push('Название');
                   if (!editing.price?.trim()) missing.push('Цена');
                   if (!editing.menuCategory) missing.push('Главная категория');
-                  En(`⚠️ Заполните обязательные поля: ${missing.join(', ')}`, true);
+                  setError(`⚠️ Заполните: ${missing.join(', ')}`);
                   return;
                 }
+                setError('');
                 save(editing);
               }} className="flex-1 bg-lime text-black font-bold uppercase tracking-widest py-2 text-xs hover:bg-lime/80">Сохранить</button>
               <button onClick={() => { setEdit(null); setAdding(null); }} className="px-4 py-2 border border-white/10 text-gray-400 text-xs uppercase tracking-widest hover:bg-white/5">Отмена</button>
