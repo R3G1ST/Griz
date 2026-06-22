@@ -4,31 +4,8 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.1">
 <title data-rh="true">Menu API | Grizzly Lounge API</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://docs.grizzly-lounge.qmbox.ru/api/menu"><meta data-rh="true" property="og:locale" content="ru"><meta data-rh="true" name="docusaurus_locale" content="ru"><meta data-rh="true" name="docsearch:language" content="ru"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Menu API | Grizzly Lounge API"><meta data-rh="true" name="description" content="GET /api/v1/menu"><meta data-rh="true" property="og:description" content="GET /api/v1/menu"><link data-rh="true" rel="canonical" href="https://docs.grizzly-lounge.qmbox.ru/api/menu"><link data-rh="true" rel="alternate" href="https://docs.grizzly-lounge.qmbox.ru/api/menu" hreflang="ru"><link data-rh="true" rel="alternate" href="https://docs.grizzly-lounge.qmbox.ru/api/menu" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Menu API","item":"https://docs.grizzly-lounge.qmbox.ru/api/menu"}]}</script><link rel="stylesheet" href="/assets/css/styles.c8174906.css">
-<script src="/assets/js/runtime~main.8bcffc9b.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.8f4a14da.js" defer="defer"></script>
 <script src="/assets/js/main.ba167869.js" defer="defer"></script>
-
-<style>
-/* GRIZZLY DARK THEME - INLINE OVERRIDE */
-:root {
-  --ifm-color-primary: #D4FF3F !important;
-  --ifm-background-color: #0d0d0d !important;
-  --ifm-navbar-background-color: #0d0d0d !important;
-  --ifm-footer-background-color: #0a0a0a !important;
-  --ifm-code-background: #1a1a1a !important;
-  --ifm-card-background-color: #141414 !important;
-  --ifm-heading-color: #ffffff !important;
-  --ifm-font-color-base: #cccccc !important;
-  --ifm-link-color: #D4FF3F !important;
-  --ifm-menu-color-active: #D4FF3F !important;
-}
-.navbar { border-bottom: 1px solid #1a1a1a !important; box-shadow: none !important; }
-.navbar__title { color: #D4FF3F !important; }
-.markdown h1, .markdown h2, .markdown h3 { color: #fff !important; }
-.markdown p { color: #bbb !important; }
-table th { background: #141414 !important; color: #D4FF3F !important; }
-.footer { border-top: 1px solid #1a1a1a !important; }
-.menu__link--active:not(.menu__link--sublist) { background: rgba(212,255,63,0.08) !important; color: #D4FF3F !important; }
-</style>
 <!-- GRIZZLY INLINE -->
 
 <style>
@@ -37,52 +14,29 @@ table th { background: #141414 !important; color: #D4FF3F !important; }
   --ifm-color-primary: #D4FF3F !important;
   --ifm-background-color: #0d0d0d !important;
   --ifm-navbar-background-color: #0d0d0d !important;
-  --ifm-footer-background-color: #0d0d0d !important; /* Убираем синий фон футера */
+  --ifm-footer-background-color: #0d0d0d !important;
   --ifm-code-background: #1a1a1a !important;
   --ifm-card-background-color: #141414 !important;
   --ifm-heading-color: #ffffff !important;
   --ifm-font-color-base: #cccccc !important;
   --ifm-link-color: #D4FF3F !important;
   --ifm-menu-color-active: #D4FF3F !important;
-  --doc-sidebar-width: 240px !important; /* Компактный сайдбар */
-  --ifm-container-width-xl: 1100px !important; /* Уже контент */
+  --doc-sidebar-width: 240px !important;
+  --ifm-container-width-xl: 1100px !important;
 }
-
-/* Футер - убираем синюю полосу */
-.footer { 
-  background: #0d0d0d !important; 
-  border-top: 1px solid #1a1a1a !important; 
-}
+.footer { background: #0d0d0d !important; border-top: 1px solid #1a1a1a !important; }
 .footer__copyright { color: #555 !important; }
-
-/* Навбар */
-.navbar { 
-  border-bottom: 1px solid #1a1a1a !important; 
-  box-shadow: none !important; 
-  background: #0d0d0d !important;
-}
+.navbar { border-bottom: 1px solid #1a1a1a !important; box-shadow: none !important; background: #0d0d0d !important; }
 .navbar__title { color: #D4FF3F !important; }
 .navbar__link { color: #999 !important; }
 .navbar__link:hover, .navbar__link--active { color: #D4FF3F !important; }
-
-/* Контент */
 .markdown h1, .markdown h2, .markdown h3 { color: #fff !important; }
 .markdown p { color: #bbb !important; line-height: 1.7 !important; }
 table th { background: #141414 !important; color: #D4FF3F !important; border-color: #222 !important; }
 table td { border-color: #222 !important; }
-
-/* Сайдбар */
-.menu__link--active:not(.menu__link--sublist) { 
-  background: rgba(212,255,63,0.08) !important; 
-  color: #D4FF3F !important; 
-  border-left: 2px solid #D4FF3F !important; 
-}
-
-/* TOC справа */
+.menu__link--active:not(.menu__link--sublist) { background: rgba(212,255,63,0.08) !important; color: #D4FF3F !important; border-left: 2px solid #D4FF3F !important; }
 .table-of-contents__link { color: #666 !important; }
 .table-of-contents__link--active { color: #D4FF3F !important; }
-
-/* Код */
 .prism-code, pre { background: #1a1a1a !important; border: 1px solid #222 !important; }
 </style>
 </head>

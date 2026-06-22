@@ -4,31 +4,8 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.1">
 <title data-rh="true">Введение | Grizzly Lounge API</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://docs.grizzly-lounge.qmbox.ru/"><meta data-rh="true" property="og:locale" content="ru"><meta data-rh="true" name="docusaurus_locale" content="ru"><meta data-rh="true" name="docsearch:language" content="ru"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Введение | Grizzly Lounge API"><meta data-rh="true" name="description" content="Добро пожаловать в документацию Grizzly Lounge API v2.0.0."><meta data-rh="true" property="og:description" content="Добро пожаловать в документацию Grizzly Lounge API v2.0.0."><link data-rh="true" rel="canonical" href="https://docs.grizzly-lounge.qmbox.ru/"><link data-rh="true" rel="alternate" href="https://docs.grizzly-lounge.qmbox.ru/" hreflang="ru"><link data-rh="true" rel="alternate" href="https://docs.grizzly-lounge.qmbox.ru/" hreflang="x-default"><script data-rh="true">function insertBanner(){var n=document.createElement("div");n.id="__docusaurus-base-url-issue-banner-container";n.innerHTML='\n<div id="__docusaurus-base-url-issue-banner" style="border: thick solid red; background-color: rgb(255, 230, 179); margin: 20px; padding: 20px; font-size: 20px;">\n   <p style="font-weight: bold; font-size: 30px;">Your Docusaurus site did not load properly.</p>\n   <p>A very common reason is a wrong site <a href="https://docusaurus.io/docs/docusaurus.config.js/#baseUrl" style="font-weight: bold;">baseUrl configuration</a>.</p>\n   <p>Current configured baseUrl = <span style="font-weight: bold; color: red;">/</span>  (default value)</p>\n   <p>We suggest trying baseUrl = <span id="__docusaurus-base-url-issue-banner-suggestion-container" style="font-weight: bold; color: green;"></span></p>\n</div>\n',document.body.prepend(n);var e=document.getElementById("__docusaurus-base-url-issue-banner-suggestion-container"),s=window.location.pathname,o="/"===s.substr(-1)?s:s+"/";e.innerHTML=o}document.addEventListener("DOMContentLoaded",function(){void 0===window.docusaurus&&insertBanner()})</script><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Введение","item":"https://docs.grizzly-lounge.qmbox.ru/"}]}</script><link rel="stylesheet" href="/assets/css/styles.c8174906.css">
-<script src="/assets/js/runtime~main.8bcffc9b.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.8f4a14da.js" defer="defer"></script>
 <script src="/assets/js/main.ba167869.js" defer="defer"></script>
-
-<style>
-/* GRIZZLY DARK THEME - INLINE OVERRIDE */
-:root {
-  --ifm-color-primary: #D4FF3F !important;
-  --ifm-background-color: #0d0d0d !important;
-  --ifm-navbar-background-color: #0d0d0d !important;
-  --ifm-footer-background-color: #0a0a0a !important;
-  --ifm-code-background: #1a1a1a !important;
-  --ifm-card-background-color: #141414 !important;
-  --ifm-heading-color: #ffffff !important;
-  --ifm-font-color-base: #cccccc !important;
-  --ifm-link-color: #D4FF3F !important;
-  --ifm-menu-color-active: #D4FF3F !important;
-}
-.navbar { border-bottom: 1px solid #1a1a1a !important; box-shadow: none !important; }
-.navbar__title { color: #D4FF3F !important; }
-.markdown h1, .markdown h2, .markdown h3 { color: #fff !important; }
-.markdown p { color: #bbb !important; }
-table th { background: #141414 !important; color: #D4FF3F !important; }
-.footer { border-top: 1px solid #1a1a1a !important; }
-.menu__link--active:not(.menu__link--sublist) { background: rgba(212,255,63,0.08) !important; color: #D4FF3F !important; }
-</style>
 <!-- GRIZZLY INLINE -->
 
 <style>
@@ -37,52 +14,29 @@ table th { background: #141414 !important; color: #D4FF3F !important; }
   --ifm-color-primary: #D4FF3F !important;
   --ifm-background-color: #0d0d0d !important;
   --ifm-navbar-background-color: #0d0d0d !important;
-  --ifm-footer-background-color: #0d0d0d !important; /* Убираем синий фон футера */
+  --ifm-footer-background-color: #0d0d0d !important;
   --ifm-code-background: #1a1a1a !important;
   --ifm-card-background-color: #141414 !important;
   --ifm-heading-color: #ffffff !important;
   --ifm-font-color-base: #cccccc !important;
   --ifm-link-color: #D4FF3F !important;
   --ifm-menu-color-active: #D4FF3F !important;
-  --doc-sidebar-width: 240px !important; /* Компактный сайдбар */
-  --ifm-container-width-xl: 1100px !important; /* Уже контент */
+  --doc-sidebar-width: 240px !important;
+  --ifm-container-width-xl: 1100px !important;
 }
-
-/* Футер - убираем синюю полосу */
-.footer { 
-  background: #0d0d0d !important; 
-  border-top: 1px solid #1a1a1a !important; 
-}
+.footer { background: #0d0d0d !important; border-top: 1px solid #1a1a1a !important; }
 .footer__copyright { color: #555 !important; }
-
-/* Навбар */
-.navbar { 
-  border-bottom: 1px solid #1a1a1a !important; 
-  box-shadow: none !important; 
-  background: #0d0d0d !important;
-}
+.navbar { border-bottom: 1px solid #1a1a1a !important; box-shadow: none !important; background: #0d0d0d !important; }
 .navbar__title { color: #D4FF3F !important; }
 .navbar__link { color: #999 !important; }
 .navbar__link:hover, .navbar__link--active { color: #D4FF3F !important; }
-
-/* Контент */
 .markdown h1, .markdown h2, .markdown h3 { color: #fff !important; }
 .markdown p { color: #bbb !important; line-height: 1.7 !important; }
 table th { background: #141414 !important; color: #D4FF3F !important; border-color: #222 !important; }
 table td { border-color: #222 !important; }
-
-/* Сайдбар */
-.menu__link--active:not(.menu__link--sublist) { 
-  background: rgba(212,255,63,0.08) !important; 
-  color: #D4FF3F !important; 
-  border-left: 2px solid #D4FF3F !important; 
-}
-
-/* TOC справа */
+.menu__link--active:not(.menu__link--sublist) { background: rgba(212,255,63,0.08) !important; color: #D4FF3F !important; border-left: 2px solid #D4FF3F !important; }
 .table-of-contents__link { color: #666 !important; }
 .table-of-contents__link--active { color: #D4FF3F !important; }
-
-/* Код */
 .prism-code, pre { background: #1a1a1a !important; border: 1px solid #222 !important; }
 </style>
 </head>
@@ -97,7 +51,6 @@ table td { border-color: #222 !important; }
 <h2 class="anchor anchorTargetStickyNavbar_qeAi" id="ресурсы">Ресурсы<a href="#ресурсы" class="hash-link" aria-label="Прямая ссылка на Ресурсы" title="Прямая ссылка на Ресурсы" translate="no">​</a></h2>
 <ul>
 <li class=""><a href="https://api.grizzly-lounge.qmbox.ru/reference" target="_blank" rel="noopener noreferrer" class="">API Reference (Scalar)</a></li>
-<li class=""><a href="https://api.grizzly-lounge.qmbox.ru/docs/" target="_blank" rel="noopener noreferrer" class="">Swagger UI</a></li>
 <li class=""><a href="https://github.com/R3G1ST/Griz" target="_blank" rel="noopener noreferrer" class="">GitHub</a></li>
 </ul></div></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Страница документа"><a class="pagination-nav__link pagination-nav__link--next" href="/api/menu"><div class="pagination-nav__sublabel">Следующая страница</div><div class="pagination-nav__label">Menu API</div></a></nav></div></div><div class="col col--3"><div class="tableOfContents_KxXJ thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#быстрый-старт" class="table-of-contents__link toc-highlight">Быстрый старт</a></li><li><a href="#ресурсы" class="table-of-contents__link toc-highlight">Ресурсы</a></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="footer__bottom text--center"><div class="footer__copyright">2026 Grizzly Lounge</div></div></div></footer></div>
 </body>
