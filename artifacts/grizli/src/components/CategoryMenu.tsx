@@ -76,7 +76,7 @@ export function CategoryMenu({ items, category, onClose, onSelectItem }: Props) 
                       onClick={() => onSelectItem(item)}
                       className="w-full flex gap-4 p-4 bg-white/5 hover:bg-white/10 rounded-lg transition group text-left"
                     >
-                      {item.image && (
+                      {item.image && item.image !== 'null' && item.image.trim() !== '' && (
                         <img 
                           src={item.image} 
                           alt={item.name} 
