@@ -28,6 +28,7 @@ export const menuItemsTable = pgTable("menu_items", {
   menuCategory: text("menu_category"),
   status: text("status").default("active"),
   isVisible: integer("is_visible").default(1),
+  outOfStock: integer("out_of_stock").default(0),
   image: text("image"),
   categoryImage: text("category_image"),
   ingredients: text("ingredients"),
