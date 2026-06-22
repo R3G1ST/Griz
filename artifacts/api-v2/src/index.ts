@@ -14,6 +14,7 @@ import { env } from './config/env.js';
 import { menuRoutes } from './routes/menu.js';
 import { postsRoutes } from './routes/posts.js';
 import { authRoutes } from './routes/auth.js';
+import { uploadRoutes } from './routes/upload.js';
 import { initWebSocket, broadcast } from './config/websocket.js';
 import { swaggerDocument } from './config/swagger.js';
 
@@ -57,6 +58,10 @@ app.use((req, res, next) => {
 app.use('/api/v1/menu', menuRoutes);
 app.use('/api/v1/posts', postsRoutes);
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/upload', uploadRoutes);
+
+// Раздача загруженных файлов
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 // Scalar API Reference (современная документация)
 app.get('/reference', (req, res, next) => {

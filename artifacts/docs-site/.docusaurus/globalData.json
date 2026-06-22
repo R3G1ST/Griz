@@ -24,6 +24,11 @@
               "id": "intro",
               "path": "/",
               "sidebar": "tutorialSidebar"
+            },
+            {
+              "id": "websocket",
+              "path": "/websocket",
+              "sidebar": "tutorialSidebar"
             }
           ],
           "draftIds": [],

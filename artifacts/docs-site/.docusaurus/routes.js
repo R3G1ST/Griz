@@ -4,15 +4,15 @@ import ComponentCreator from '@docusaurus/ComponentCreator';
 export default [
   {
     path: '/',
-    component: ComponentCreator('/', '74a'),
+    component: ComponentCreator('/', '17b'),
     routes: [
       {
         path: '/',
-        component: ComponentCreator('/', 'b92'),
+        component: ComponentCreator('/', '681'),
         routes: [
           {
             path: '/',
-            component: ComponentCreator('/', 'ab5'),
+            component: ComponentCreator('/', 'b76'),
             routes: [
               {
                 path: '/api/menu',
@@ -23,6 +23,12 @@ export default [
               {
                 path: '/auth',
                 component: ComponentCreator('/auth', 'd3f'),
+                exact: true,
+                sidebar: "tutorialSidebar"
+              },
+              {
+                path: '/websocket',
+                component: ComponentCreator('/websocket', '026'),
                 exact: true,
                 sidebar: "tutorialSidebar"
               },

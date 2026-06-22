@@ -1,15 +1,15 @@
 {
-  "/-74a": {
+  "/-17b": {
     "__comp": "5e95c892",
     "__context": {
       "plugin": "aba21aa0"
     }
   },
-  "/-b92": {
+  "/-681": {
     "__comp": "a7bd4aaa",
     "__props": "22dd74f7"
   },
-  "/-ab5": {
+  "/-b76": {
     "__comp": "a94703ab"
   },
   "/api/menu-52d": {
@@ -19,6 +19,10 @@
   "/auth-d3f": {
     "__comp": "17896441",
     "content": "cb769c5c"
+  },
+  "/websocket-026": {
+    "__comp": "17896441",
+    "content": "4ce354b2"
   },
   "/-fc9": {
     "__comp": "17896441",

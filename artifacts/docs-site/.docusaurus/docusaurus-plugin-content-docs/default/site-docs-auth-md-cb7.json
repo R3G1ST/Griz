@@ -20,7 +20,7 @@
     "permalink": "/"
   },
   "next": {
-    "title": "Menu API",
-    "permalink": "/api/menu"
+    "title": "WebSocket",
+    "permalink": "/websocket"
   }
 }

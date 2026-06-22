@@ -1,0 +1,26 @@
+{
+  "id": "websocket",
+  "title": "WebSocket",
+  "description": "API поддерживает WebSocket для получения мгновенных уведомлений в реальном времени.",
+  "source": "@site/docs/websocket.md",
+  "sourceDirName": ".",
+  "slug": "/websocket",
+  "permalink": "/websocket",
+  "draft": false,
+  "unlisted": false,
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 3,
+  "frontMatter": {
+    "sidebar_position": 3
+  },
+  "sidebar": "tutorialSidebar",
+  "previous": {
+    "title": "Авторизация",
+    "permalink": "/auth"
+  },
+  "next": {
+    "title": "Menu API",
+    "permalink": "/api/menu"
+  }
+}
