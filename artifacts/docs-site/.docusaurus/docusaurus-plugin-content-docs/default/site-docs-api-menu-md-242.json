@@ -16,7 +16,7 @@
   },
   "sidebar": "tutorialSidebar",
   "previous": {
-    "title": "Введение",
-    "permalink": "/"
+    "title": "Авторизация",
+    "permalink": "/auth"
   }
 }

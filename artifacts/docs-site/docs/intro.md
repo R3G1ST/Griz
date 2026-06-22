@@ -9,9 +9,9 @@ slug: /
 
 ## Быстрый старт
 
-```bash
+\`\`\`bash
 curl https://api.grizzly-lounge.qmbox.ru/api/v1/menu
-```
+\`\`\`
 
 ## Ресурсы
 

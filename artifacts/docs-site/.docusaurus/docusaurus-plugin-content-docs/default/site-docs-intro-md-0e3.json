@@ -17,7 +17,7 @@
   },
   "sidebar": "tutorialSidebar",
   "next": {
-    "title": "Menu API",
-    "permalink": "/api/menu"
+    "title": "Авторизация",
+    "permalink": "/auth"
   }
 }
