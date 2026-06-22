@@ -13,6 +13,7 @@ type MenuItem = {
   status?: string | null;
   isVisible?: number | null;
   outOfStock?: number | null;
+  isActive?: number | null;
 };
 
 type Props = {
