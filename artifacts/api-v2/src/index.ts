@@ -6,6 +6,7 @@ const __dirname = path.dirname(__filename);
 
 import 'dotenv/config';
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import cors from 'cors';
 import helmet from 'helmet';
 import { apiReference } from '@scalar/express-api-reference';
