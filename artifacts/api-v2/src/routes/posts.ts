@@ -3,6 +3,7 @@ import { eq, desc } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { postsTable } from '../db/schema.js';
 import { validateApiKey } from '../config/api-keys.js';
+import { broadcast } from '../config/websocket.js';
 
 const router = Router();
 
@@ -77,6 +78,7 @@ router.post('/', requireAdminKey, async (req, res) => {
       .values({ title, slug, content, excerpt, image, published })
       .returning();
 
+    broadcast('new_post', newPost[0]);
     res.status(201).json(newPost[0]);
   } catch (error: any) {
     console.error('POST /posts error:', error);

@@ -14,6 +14,7 @@ import { env } from './config/env.js';
 import { menuRoutes } from './routes/menu.js';
 import { postsRoutes } from './routes/posts.js';
 import { authRoutes } from './routes/auth.js';
+import { initWebSocket, broadcast } from './config/websocket.js';
 import { swaggerDocument } from './config/swagger.js';
 
 const app = express();
