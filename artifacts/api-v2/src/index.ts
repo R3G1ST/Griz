@@ -12,6 +12,7 @@ import { apiReference } from '@scalar/express-api-reference';
 import { env } from './config/env.js';
 import { menuRoutes } from './routes/menu.js';
 import { postsRoutes } from './routes/posts.js';
+import { authRoutes } from './routes/auth.js';
 import { swaggerDocument } from './config/swagger.js';
 
 const app = express();
@@ -53,6 +54,7 @@ app.use((req, res, next) => {
 
 app.use('/api/v1/menu', menuRoutes);
 app.use('/api/v1/posts', postsRoutes);
+app.use('/api/v1/auth', authRoutes);
 
 // Scalar API Reference (современная документация)
 app.get('/reference', (req, res, next) => {

@@ -48,3 +48,15 @@ export const apiKeysTable = pgTable("api_keys", {
 export type MenuItem = typeof menuItemsTable.$inferSelect;
 export type Post = typeof postsTable.$inferSelect;
 export type ApiKey = typeof apiKeysTable.$inferSelect;
+
+export const usersTable = pgTable("users", {
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  passwordHash: text("password_hash").notNull(),
+  role: text("role").notNull().default("user"),
+  telegramId: text("telegram_id"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type User = typeof usersTable.$inferSelect;
