@@ -18,10 +18,11 @@ jobs:
             cd /var/www/Griz
             git pull origin feature/pro-api
 
-            # Пересобираем API
+            # Пересобираем API (компиляция TS + рестарт)
             cd artifacts/api-v2
             pnpm install --frozen-lockfile
-            systemctl restart grizli-api-v2
+            pnpm run build
+            sudo systemctl restart grizli-api-v2
 
             # Пересобираем Docs
             cd ../docs-site
@@ -29,5 +30,5 @@ jobs:
             pnpm run build
             python3 apply-theme.py
 
-            nginx -t && systemctl reload nginx
+            sudo nginx -t && sudo systemctl reload nginx
             echo "Deployed successfully"
