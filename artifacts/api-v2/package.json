@@ -16,7 +16,6 @@
     "express": "^5.2.1",
     "helmet": "^8.2.0",
     "pg": "^8.20.0",
-    "swagger-ui-express": "^5.0.1",
     "zod": "catalog:"
   },
   "devDependencies": {
@@ -24,7 +23,6 @@
     "@types/express": "^5.0.6",
     "@types/node": "catalog:",
     "@types/pg": "^8.20.0",
-    "@types/swagger-ui-express": "^4.1.8",
     "tsx": "catalog:",
     "typescript": "~5.9.3"
   }

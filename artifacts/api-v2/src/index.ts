@@ -8,7 +8,6 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import swaggerUi from 'swagger-ui-express';
 import { apiReference } from '@scalar/express-api-reference';
 import { env } from './config/env.js';
 import { menuRoutes } from './routes/menu.js';
@@ -40,7 +39,6 @@ app.use((req, res, next) => {
 
 app.use('/api/v1/menu', menuRoutes);
 
-app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 // Scalar API Reference (современная документация)
 app.get('/reference', (req, res, next) => {
   // Отключаем CSP для Scalar
@@ -51,10 +49,49 @@ app.get('/reference', (req, res, next) => {
   spec: {
     url: '/api/v1/openapi.json',
   },
-  theme: 'purple',
+  theme: 'alternate',
   darkMode: true,
-  hideModels: false,
-  hideDownloadButton: false,
+  hideModels: true,
+  hideDownloadButton: true,
+  hideTestRequestButton: false,
+  defaultHttpClient: {
+    targetKey: 'shell',
+    clientKey: 'curl',
+  },
+  customCss: `
+    /* === GRIZZLY THEME === */
+    /* Фон */
+    .dark-mode, body { background: #0d0d0d !important; }
+    .scalar-app { background: #0d0d0d !important; }
+    
+    /* Сайдбар - убираем лишний отступ */
+    .sidebar { 
+      background: #111 !important; 
+      border-right: 1px solid #222 !important;
+      width: 260px !important;
+    }
+    .sidebar-group-title { color: #D4FF3F !important; font-size: 11px !important; text-transform: uppercase !important; letter-spacing: 1px !important; }
+    .sidebar-link { color: #999 !important; font-size: 13px !important; padding: 6px 12px !important; }
+    .sidebar-link.active-page { color: #D4FF3F !important; background: rgba(212,255,63,0.08) !important; }
+    .sidebar-link:hover { color: #fff !important; }
+    
+    /* Контент - компактнее */
+    .section-header { border-bottom: 1px solid #222 !important; }
+    .endpoint-label { font-size: 11px !important; }
+    .request-url { background: #1a1a1a !important; border: 1px solid #333 !important; border-radius: 6px !important; }
+    
+    /* Акцентный цвет */
+    .text-c-1, .method-get { color: #D4FF3F !important; }
+    .bg-c-1 { background: #D4FF3F !important; }
+    .border-c-1 { border-color: #D4FF3F !important; }
+    
+    /* Код */
+    pre, code { background: #1a1a1a !important; border: 1px solid #222 !important; }
+    
+    /* Убираем ненужное */
+    .darklight-reference, .download-cta, .scalar-brand { display: none !important; }
+    .show-api-client-button { background: #D4FF3F !important; color: #000 !important; border-radius: 6px !important; }
+  `,
 }));
 
 

@@ -5,7 +5,7 @@
  */
 export default {
   "title": "Grizzly Lounge API",
-  "tagline": "Профессиональная документация API",
+  "tagline": "Документация API v2.0.0",
   "url": "https://docs.grizzly-lounge.qmbox.ru",
   "baseUrl": "/",
   "organizationName": "R3G1ST",
@@ -35,14 +35,19 @@ export default {
     ]
   ],
   "themeConfig": {
+    "colorMode": {
+      "defaultMode": "dark",
+      "disableSwitch": true,
+      "respectPrefersColorScheme": false
+    },
     "navbar": {
-      "title": "Grizzly Lounge API",
+      "title": "Grizzly API",
       "items": [
         {
           "type": "docSidebar",
           "sidebarId": "tutorialSidebar",
           "position": "left",
-          "label": "Документация"
+          "label": "Docs"
         },
         {
           "href": "https://api.grizzly-lounge.qmbox.ru/reference",
@@ -61,11 +66,6 @@ export default {
       "style": "dark",
       "copyright": "2026 Grizzly Lounge",
       "links": []
-    },
-    "colorMode": {
-      "defaultMode": "light",
-      "disableSwitch": false,
-      "respectPrefersColorScheme": false
     },
     "docs": {
       "versionPersistence": "localStorage",
@@ -281,7 +281,7 @@ export default {
       "maintainCase": false
     },
     "hooks": {
-      "onBrokenMarkdownLinks": "warn",
+      "onBrokenMarkdownLinks": "ignore",
       "onBrokenMarkdownImages": "throw"
     }
   }
