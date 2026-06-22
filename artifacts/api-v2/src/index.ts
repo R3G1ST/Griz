@@ -9,6 +9,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
+import { apiReference } from '@scalar/express-api-reference';
 import { env } from './config/env.js';
 import { menuRoutes } from './routes/menu.js';
 import { swaggerDocument } from './config/swagger.js';
@@ -39,6 +40,17 @@ app.use((req, res, next) => {
 app.use('/api/v1/menu', menuRoutes);
 
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+// Scalar API Reference (современная документация)
+app.use('/reference', apiReference({
+  spec: {
+    url: '/api/v1/openapi.json',
+  },
+  theme: 'purple',
+  darkMode: true,
+  hideModels: false,
+  hideDownloadButton: false,
+}));
+
 
 
 // Root endpoint - serve HTML
