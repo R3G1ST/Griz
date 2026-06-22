@@ -18,8 +18,9 @@ jobs:
             cd /var/www/Griz
             git pull origin feature/pro-api
 
-            # Копируем свежий index.html в public (убирает Swagger)
-            cp artifacts/api-v2/src/public/index.html artifacts/api-v2/public/index.html 2>/dev/null || true
+            # Копируем свежий index.html ДО сборки
+            mkdir -p artifacts/api-v2/public
+            cp artifacts/api-v2/src/public/index.html artifacts/api-v2/public/index.html
 
             # Пересобираем API
             cd artifacts/api-v2
