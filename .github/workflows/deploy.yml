@@ -18,7 +18,10 @@ jobs:
             cd /var/www/Griz
             git pull origin feature/pro-api
 
-            # Пересобираем API (компиляция TS + рестарт)
+            # Копируем свежий index.html в public (убирает Swagger)
+            cp artifacts/api-v2/src/public/index.html artifacts/api-v2/public/index.html 2>/dev/null || true
+
+            # Пересобираем API
             cd artifacts/api-v2
             pnpm install --frozen-lockfile
             pnpm run build
