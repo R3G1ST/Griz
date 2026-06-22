@@ -1,76 +1,47 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grizzly Lounge API</title>
-    <style>
-        *{margin:0;padding:0;box-sizing:border-box}
-        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#0d0d0d,#1a1a1a);color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-        .container{max-width:900px;text-align:center}
-        .logo{font-size:56px;margin-bottom:20px}
-        h1{font-size:40px;margin-bottom:12px;background:linear-gradient(135deg,#D4FF3F,#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-        .subtitle{font-size:18px;color:#888;margin-bottom:40px}
-        .status{display:inline-flex;align-items:center;gap:8px;padding:8px 20px;background:rgba(212,255,63,.1);border:1px solid rgba(212,255,63,.3);border-radius:24px;color:#D4FF3F;font-size:14px;margin-bottom:48px}
-        .status-dot{width:8px;height:8px;background:#D4FF3F;border-radius:50%;animation:pulse 2s infinite}
-        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-        .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:20px}
-        .card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:28px 24px;text-align:left;transition:all .3s ease;text-decoration:none;color:inherit;position:relative;overflow:hidden}
-        .card:hover{background:rgba(255,255,255,.07);border-color:#D4FF3F;transform:translateY(-4px);box-shadow:0 8px 32px rgba(212,255,63,.1)}
-        .card.primary{border-color:rgba(212,255,63,.3);background:rgba(212,255,63,.05)}
-        .card.primary:hover{background:rgba(212,255,63,.1)}
-        .card-icon{font-size:32px;margin-bottom:14px}
-        .card-title{font-size:18px;font-weight:600;margin-bottom:8px;color:#D4FF3F}
-        .card-description{font-size:14px;color:#999;line-height:1.6}
-        .badge{position:absolute;top:12px;right:12px;padding:3px 10px;background:#D4FF3F;color:#000;font-size:11px;font-weight:700;border-radius:12px;text-transform:uppercase}
-        .footer{margin-top:60px;padding-top:24px;border-top:1px solid rgba(255,255,255,.06);color:#555;font-size:13px}
-        .footer code{background:rgba(255,255,255,.06);padding:2px 8px;border-radius:4px;color:#888}
-        .version{padding:4px 10px;background:rgba(255,255,255,.06);border-radius:6px;color:#666;font-size:12px;margin-left:8px}
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grizzly Lounge API</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#0d0d0d,#1a1a1a);color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.container{max-width:900px;text-align:center}
+.logo{font-size:56px;margin-bottom:20px}
+h1{font-size:40px;margin-bottom:12px;background:linear-gradient(135deg,#D4FF3F,#fff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.subtitle{font-size:18px;color:#888;margin-bottom:40px}
+.status{display:inline-flex;align-items:center;gap:8px;padding:8px 20px;background:rgba(212,255,63,.1);border:1px solid rgba(212,255,63,.3);border-radius:24px;color:#D4FF3F;font-size:14px;margin-bottom:48px}
+.dot{width:8px;height:8px;background:#D4FF3F;border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:20px}
+.card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:28px 24px;text-align:left;transition:all .3s;text-decoration:none;color:inherit;position:relative}
+.card:hover{background:rgba(255,255,255,.07);border-color:#D4FF3F;transform:translateY(-4px)}
+.card.primary{border-color:rgba(212,255,63,.3);background:rgba(212,255,63,.05)}
+.icon{font-size:32px;margin-bottom:14px}
+.title{font-size:18px;font-weight:600;margin-bottom:8px;color:#D4FF3F}
+.desc{font-size:14px;color:#999;line-height:1.6}
+.badge{position:absolute;top:12px;right:12px;padding:3px 10px;background:#D4FF3F;color:#000;font-size:11px;font-weight:700;border-radius:12px;text-transform:uppercase}
+.footer{margin-top:60px;padding-top:24px;border-top:1px solid rgba(255,255,255,.06);color:#555;font-size:13px}
+code{background:rgba(255,255,255,.06);padding:2px 8px;border-radius:4px;color:#888}
+.ver{padding:4px 10px;background:rgba(255,255,255,.06);border-radius:6px;color:#666;font-size:12px;margin-left:8px}
+</style>
 </head>
 <body>
-    <div class="container">
-        <div class="logo">🐻</div>
-        <h1>Grizzly Lounge API</h1>
-        <p class="subtitle">Профессиональный REST API для управления контентом</p>
-        <div class="status"><span class="status-dot"></span> Работает <span class="version">v2.0.0</span></div>
-        <div class="cards">
-            <a href="/reference" class="card primary">
-                <span class="badge">Docs</span>
-                <div class="card-icon">📚</div>
-                <div class="card-title">API Reference</div>
-                <div class="card-description">Интерактивная документация Scalar с примерами и тестированием</div>
-            </a>
-            <a href="/api/v1/menu" class="card">
-                <div class="card-icon">🍽️</div>
-                <div class="card-title">Menu API</div>
-                <div class="card-description">Управление позициями меню: создание, редактирование, удаление</div>
-            </a>
-            <a href="/api/v1/posts" class="card">
-                <div class="card-icon">📝</div>
-                <div class="card-title">Posts API</div>
-                <div class="card-description">Управление статьями и новостями: публикация, редактирование</div>
-            </a>
-            <a href="/health" class="card">
-                <div class="card-icon">🏥</div>
-                <div class="card-title">Health Check</div>
-                <div class="card-description">Проверка статуса API и времени работы сервиса</div>
-            </a>
-            <a href="https://docs.grizzly-lounge.qmbox.ru" class="card" target="_blank">
-                <div class="card-icon">📖</div>
-                <div class="card-title">Documentation</div>
-                <div class="card-description">Полная документация по интеграции и использованию API</div>
-            </a>
-            <a href="https://github.com/R3G1ST/Griz" class="card" target="_blank">
-                <div class="card-icon">💻</div>
-                <div class="card-title">GitHub</div>
-                <div class="card-description">Исходный код проекта и документация для разработчиков</div>
-            </a>
-        </div>
-        <div class="footer">
-            <p>&copy; 2026 Grizzly Lounge. Все права защищены.</p>
-            <p style="margin-top:8px">Endpoint: <code>https://api.grizzly-lounge.qmbox.ru</code></p>
-        </div>
-    </div>
+<div class="container">
+<div class="logo">🐻</div>
+<h1>Grizzly Lounge API</h1>
+<p class="subtitle">Профессиональный REST API для управления контентом</p>
+<div class="status"><span class="dot"></span> Работает <span class="ver">v2.0.0</span></div>
+<div class="cards">
+<a href="/reference" class="card primary"><span class="badge">Docs</span><div class="icon">📚</div><div class="title">API Reference</div><div class="desc">Интерактивная документация Scalar с примерами и тестированием</div></a>
+<a href="/api/v1/menu" class="card"><div class="icon">🍽️</div><div class="title">Menu API</div><div class="desc">Управление позициями меню: создание, редактирование, удаление</div></a>
+<a href="/api/v1/posts" class="card"><div class="icon">📝</div><div class="title">Posts API</div><div class="desc">Управление статьями и новостями: публикация, редактирование</div></a>
+<a href="/health" class="card"><div class="icon">🏥</div><div class="title">Health Check</div><div class="desc">Проверка статуса API и времени работы сервиса</div></a>
+<a href="https://docs.grizzly-lounge.qmbox.ru" class="card" target="_blank"><div class="icon">📖</div><div class="title">Documentation</div><div class="desc">Полная документация по интеграции и использованию API</div></a>
+<a href="https://github.com/R3G1ST/Griz" class="card" target="_blank"><div class="icon">💻</div><div class="title">GitHub</div><div class="desc">Исходный код проекта и документация для разработчиков</div></a>
+</div>
+<div class="footer"><p>&copy; 2026 Grizzly Lounge</p><p style="margin-top:8px">Endpoint: <code>https://api.grizzly-lounge.qmbox.ru</code></p></div>
+</div>
 </body>
 </html>
