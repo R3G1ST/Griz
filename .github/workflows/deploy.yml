@@ -18,17 +18,19 @@ jobs:
             cd /var/www/Griz
             git pull origin feature/pro-api
 
-            # Копируем свежий index.html ДО сборки
-            mkdir -p artifacts/api-v2/public
-            cp artifacts/api-v2/src/public/index.html artifacts/api-v2/public/index.html
-
-            # Пересобираем API
+            # Собираем API
             cd artifacts/api-v2
             pnpm install --frozen-lockfile
             pnpm run build
+
+            # Копируем index.html в выходную папку ПОСЛЕ сборки
+            OUTDIR=$(node -e "const t=require('./tsconfig.json');console.log(t.compilerOptions.outDir||'dist')" 2>/dev/null || echo "dist")
+            mkdir -p "$OUTDIR/public"
+            cp src/public/index.html "$OUTDIR/public/index.html"
+
             sudo systemctl restart grizli-api-v2
 
-            # Пересобираем Docs
+            # Собираем Docs
             cd ../docs-site
             pnpm install --frozen-lockfile
             pnpm run build
