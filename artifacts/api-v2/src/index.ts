@@ -96,6 +96,12 @@ app.get('/reference', (req, res, next) => {
 
 
 
+
+// OpenAPI JSON для Scalar
+app.get('/api/v1/openapi.json', (req, res) => {
+  res.json(swaggerDocument);
+});
+
 // Root endpoint - serve HTML
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
