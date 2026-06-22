@@ -1,5 +1,8 @@
 import { Router } from 'express';
-import { validateApiKey } from '../config/api-keys';
+import { eq, desc } from 'drizzle-orm';
+import { db } from '../db/index.js';
+import { postsTable } from '../db/schema.js';
+import { validateApiKey } from '../config/api-keys.js';
 
 const router = Router();
 
@@ -12,23 +15,31 @@ const requireAdminKey = (req: any, res: any, next: any) => {
   next();
 };
 
-// GET /api/v1/posts - публичный доступ
+// GET /api/v1/posts - публичный доступ (только опубликованные)
 router.get('/', async (req, res) => {
   try {
-    // Заглушка — позже подключим БД
-    res.json([
-      {
-        id: 1,
-        title: 'Добро пожаловать в Grizzly Lounge',
-        slug: 'welcome-to-grizzly-lounge',
-        excerpt: 'Мы открылись! Приходите за лучшим кальяном в городе.',
-        content: 'Полный текст статьи...',
-        image: null,
-        publishedAt: '2026-06-22T16:00:00.000Z',
-        isActive: true,
-      },
-    ]);
+    const posts = await db
+      .select()
+      .from(postsTable)
+      .where(eq(postsTable.published, true))
+      .orderBy(desc(postsTable.createdAt));
+    res.json(posts);
   } catch (error) {
+    console.error('GET /posts error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/v1/posts/all - все посты (требует API ключ)
+router.get('/all', requireAdminKey, async (req, res) => {
+  try {
+    const posts = await db
+      .select()
+      .from(postsTable)
+      .orderBy(desc(postsTable.createdAt));
+    res.json(posts);
+  } catch (error) {
+    console.error('GET /posts/all error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -36,8 +47,18 @@ router.get('/', async (req, res) => {
 // GET /api/v1/posts/:slug - публичный доступ
 router.get('/:slug', async (req, res) => {
   try {
-    res.json({ message: 'Post by slug', slug: req.params.slug });
+    const post = await db
+      .select()
+      .from(postsTable)
+      .where(eq(postsTable.slug, req.params.slug))
+      .limit(1);
+
+    if (!post.length || !post[0].published) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+    res.json(post[0]);
   } catch (error) {
+    console.error('GET /posts/:slug error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -45,8 +66,23 @@ router.get('/:slug', async (req, res) => {
 // POST /api/v1/posts - требует API ключ
 router.post('/', requireAdminKey, async (req, res) => {
   try {
-    res.status(201).json({ message: 'Post created' });
-  } catch (error) {
+    const { title, slug, content, excerpt, image, published } = req.body;
+
+    if (!title || !slug || !content) {
+      return res.status(400).json({ error: 'title, slug and content are required' });
+    }
+
+    const newPost = await db
+      .insert(postsTable)
+      .values({ title, slug, content, excerpt, image, published })
+      .returning();
+
+    res.status(201).json(newPost[0]);
+  } catch (error: any) {
+    console.error('POST /posts error:', error);
+    if (error.code === '23505') {
+      return res.status(409).json({ error: 'Post with this slug already exists' });
+    }
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -54,8 +90,24 @@ router.post('/', requireAdminKey, async (req, res) => {
 // PUT /api/v1/posts/:id - требует API ключ
 router.put('/:id', requireAdminKey, async (req, res) => {
   try {
-    res.json({ message: 'Post updated' });
-  } catch (error) {
+    const id = parseInt(req.params.id);
+    const { title, slug, content, excerpt, image, published } = req.body;
+
+    const updated = await db
+      .update(postsTable)
+      .set({ title, slug, content, excerpt, image, published, updatedAt: new Date() })
+      .where(eq(postsTable.id, id))
+      .returning();
+
+    if (!updated.length) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+    res.json(updated[0]);
+  } catch (error: any) {
+    console.error('PUT /posts/:id error:', error);
+    if (error.code === '23505') {
+      return res.status(409).json({ error: 'Post with this slug already exists' });
+    }
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -63,8 +115,19 @@ router.put('/:id', requireAdminKey, async (req, res) => {
 // DELETE /api/v1/posts/:id - требует API ключ
 router.delete('/:id', requireAdminKey, async (req, res) => {
   try {
-    res.json({ message: 'Post deleted' });
+    const id = parseInt(req.params.id);
+
+    const deleted = await db
+      .delete(postsTable)
+      .where(eq(postsTable.id, id))
+      .returning();
+
+    if (!deleted.length) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+    res.json({ message: 'Post deleted', id });
   } catch (error) {
+    console.error('DELETE /posts/:id error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
