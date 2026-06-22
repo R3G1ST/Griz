@@ -11,6 +11,7 @@ import helmet from 'helmet';
 import { apiReference } from '@scalar/express-api-reference';
 import { env } from './config/env.js';
 import { menuRoutes } from './routes/menu.js';
+import { postsRoutes } from './routes/posts.js';
 import { swaggerDocument } from './config/swagger.js';
 
 const app = express();
@@ -38,6 +39,7 @@ app.use((req, res, next) => {
 });
 
 app.use('/api/v1/menu', menuRoutes);
+app.use('/api/v1/posts', postsRoutes);
 
 // Scalar API Reference (современная документация)
 app.get('/reference', (req, res, next) => {
