@@ -33,6 +33,19 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(cors({ origin: env.CORS_ORIGIN }));
 app.use(express.json());
 
+// Безопасность и лимиты
+app.use(helmet());
+app.use(cors({ origin: process.env.CORS_ORIGIN || '*', credentials: true }));
+
+// Rate limiting: 100 запросов за 15 минут
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { error: 'Too many requests, please try again later' },
+});
+app.use('/api/', limiter);
+
+
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
   next();
