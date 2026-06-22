@@ -20,10 +20,11 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdn.jsdelivr.net"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https:"],
-      scriptSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
+      connectSrc: ["'self'", "https:"],
     },
   },
   crossOriginEmbedderPolicy: false,
@@ -41,7 +42,12 @@ app.use('/api/v1/menu', menuRoutes);
 
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 // Scalar API Reference (современная документация)
-app.use('/reference', apiReference({
+app.get('/reference', (req, res, next) => {
+  // Отключаем CSP для Scalar
+  res.removeHeader('Content-Security-Policy');
+  res.removeHeader('X-Content-Security-Policy');
+  next();
+}, apiReference({
   spec: {
     url: '/api/v1/openapi.json',
   },
