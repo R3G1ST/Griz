@@ -1,3 +1,9 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
@@ -10,6 +16,7 @@ import { swaggerDocument } from './config/swagger.js';
 const app = express();
 
 app.use(helmet());
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(cors({ origin: env.CORS_ORIGIN }));
 app.use(express.json());
 
@@ -21,6 +28,12 @@ app.use((req, res, next) => {
 app.use('/api/v1/menu', menuRoutes);
 
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+
+// Root endpoint - serve HTML
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
