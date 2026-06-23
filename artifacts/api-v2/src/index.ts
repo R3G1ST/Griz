@@ -16,6 +16,7 @@ import { postsRoutes } from './routes/posts.js';
 import { authRoutes } from './routes/auth.js';
 import { uploadRoutes } from './routes/upload.js';
 import { botRoutes } from './routes/bot.js';
+import { loyaltyRoutes } from './routes/loyalty.js';
 import { initWebSocket, broadcast } from './config/websocket.js';
 import { swaggerDocument } from './config/swagger.js';
 
@@ -61,6 +62,7 @@ app.use('/api/v1/posts', postsRoutes);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1/bot', botRoutes);
+app.use('/api/v1/loyalty', loyaltyRoutes);
 
 // Раздача загруженных файлов
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));

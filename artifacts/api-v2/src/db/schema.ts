@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, timestamp, jsonb, boolean } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, varchar, integer, timestamp, jsonb, boolean } from "drizzle-orm/pg-core";
 
 export const menuItemsTable = pgTable("menu_items", {
   id: serial("id").primaryKey(),
@@ -60,3 +60,16 @@ export const usersTable = pgTable("users", {
 });
 
 export type User = typeof usersTable.$inferSelect;
+
+
+export const loyaltyUsers = pgTable('loyalty_users', {
+  id: serial('id').primaryKey(),
+  phone: varchar('phone', { length: 20 }).unique().notNull(),
+  name: varchar('name', { length: 100 }),
+  status: varchar('status', { length: 20 }).default('bronze').notNull(),
+  points: integer('points').default(0).notNull(),
+  visits: integer('visits').default(0).notNull(),
+  qrCode: varchar('qr_code', { length: 64 }).unique().notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
