@@ -1,0 +1,11 @@
+CREATE TABLE IF NOT EXISTS loyalty_users (
+  id SERIAL PRIMARY KEY,
+  phone VARCHAR(20) UNIQUE NOT NULL,
+  name VARCHAR(100),
+  status VARCHAR(20) DEFAULT 'bronze',
+  points INTEGER DEFAULT 0,
+  visits INTEGER DEFAULT 0,
+  qr_code VARCHAR(64) UNIQUE NOT NULL,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);

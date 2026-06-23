@@ -1,0 +1,100 @@
+/* === GRIZZLY DARK THEME === */
+
+:root {
+  --ifm-color-primary: #D4FF3F;
+  --ifm-color-primary-dark: #c0e636;
+  --ifm-color-primary-darker: #b5d932;
+  --ifm-color-primary-light: #dfff5c;
+  --ifm-background-color: #0d0d0d;
+  --ifm-background-surface-color: #141414;
+  --ifm-navbar-background-color: #0d0d0d;
+  --ifm-footer-background-color: #0a0a0a;
+  --ifm-sidebar-background: #0d0d0d;
+  --ifm-code-background: #1a1a1a;
+  --ifm-card-background-color: #141414;
+  --ifm-heading-color: #ffffff;
+  --ifm-font-color-base: #cccccc;
+  --ifm-link-color: #D4FF3F;
+  --ifm-menu-color-active: #D4FF3F;
+  --ifm-breadcrumb-color-active: #D4FF3F;
+  --ifm-toc-link-color: #888888;
+  --ifm-table-stripe-background: #141414;
+  --ifm-hr-border-color: #222222;
+  --doc-sidebar-width: 240px !important;
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #D4FF3F;
+  --ifm-background-color: #0d0d0d;
+  --ifm-background-surface-color: #141414;
+  --ifm-navbar-background-color: #0d0d0d;
+  --ifm-footer-background-color: #0a0a0a;
+  --ifm-sidebar-background: #0d0d0d;
+  --ifm-code-background: #1a1a1a;
+  --ifm-card-background-color: #141414;
+}
+
+/* Навбар - тонкий, без полосы */
+.navbar {
+  border-bottom: 1px solid #1a1a1a !important;
+  box-shadow: none !important;
+  height: 56px !important;
+  padding: 0 1rem !important;
+}
+
+.navbar__title {
+  font-size: 16px !important;
+  color: #D4FF3F !important;
+}
+
+.navbar__link {
+  font-size: 13px !important;
+  color: #999 !important;
+}
+
+.navbar__link:hover, .navbar__link--active {
+  color: #D4FF3F !important;
+}
+
+/* Сайдбар - компактный */
+.menu__list-item-collapsible:hover {
+  background: rgba(212, 255, 63, 0.05) !important;
+}
+
+.menu__link--active:not(.menu__link--sublist) {
+  background: rgba(212, 255, 63, 0.08) !important;
+  color: #D4FF3F !important;
+  border-left: 2px solid #D4FF3F !important;
+}
+
+.menu__link {
+  font-size: 13px !important;
+  padding: 6px 12px !important;
+}
+
+/* Контент - читаемый */
+.markdown h1 { font-size: 28px !important; color: #fff !important; }
+.markdown h2 { font-size: 22px !important; color: #eee !important; border-bottom: 1px solid #222 !important; padding-bottom: 8px !important; }
+.markdown h3 { font-size: 18px !important; color: #ddd !important; }
+.markdown p { line-height: 1.7 !important; color: #bbb !important; }
+
+/* Код */
+.prism-code {
+  background: #1a1a1a !important;
+  border: 1px solid #222 !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+}
+
+/* Таблицы */
+table th { background: #141414 !important; color: #D4FF3F !important; border-color: #222 !important; }
+table td { border-color: #222 !important; }
+table tr:nth-child(2n) { background: #111 !important; }
+
+/* Футер */
+.footer { border-top: 1px solid #1a1a1a !important; }
+.footer__copyright { color: #555 !important; font-size: 12px !important; }
+
+/* TOC справа - компактнее */
+.table-of-contents__link { font-size: 12px !important; color: #666 !important; }
+.table-of-contents__link--active { color: #D4FF3F !important; }
